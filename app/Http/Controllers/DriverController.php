@@ -7,12 +7,38 @@ use App\Models\Driver;
 
 class DriverController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        // Mengambil data driver sekaligus menghitung total booking secara efisien
-        $drivers = Driver::withCount('bookings')->latest()->get();
+        // 1. Ambil parameter dari URL untuk search dan sort (jika kosong, gunakan default)
+        $search = $request->get('search');
+        $sortBy = $request->get('sort_by', 'created_at');
+        $sortOrder = $request->get('sort_order', 'desc');
 
-        return view('admin.driver.table', compact('drivers'));
+        // 2. Query dasar dengan menghitung total booking secara efisien
+        $query = Driver::withCount('bookings');
+
+        // 3. Logika Pencarian (Search berdasarkan nama atau nomor telepon)
+        if (!empty($search)) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'LIKE', "%{$search}%")
+                    ->orWhere('phone', 'LIKE', "%{$search}%");
+            });
+        }
+
+        // 4. Logika Pengurutan (Sort dengan Whitelist Kolom)
+        $allowedSorts = ['name', 'phone', 'created_at'];
+        if (in_array($sortBy, $allowedSorts)) {
+            $query->orderBy($sortBy, $sortOrder);
+        } else {
+            $query->orderBy('created_at', 'desc');
+        }
+
+        // 5. Paginasi (Pagination) - Mengambil 10 data per halaman
+        // appends() memastikan query string tidak hilang saat pindah halaman paginasi
+        $drivers = $query->paginate(10)->appends($request->all());
+
+        // Diarahkan ke file view 'admin.driver.table' sesuai dengan kode Anda
+        return view('admin.driver.table', compact('drivers', 'search', 'sortBy', 'sortOrder'));
     }
 
     /**

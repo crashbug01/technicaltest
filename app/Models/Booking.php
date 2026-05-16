@@ -27,4 +27,18 @@ class Booking extends Model
         return $this->belongsTo(Driver::class);
     }
 
+    public function approver1()
+    {
+        // Menghubungkan kolom approver_1_id ke kolom id di tabel users
+        return $this->belongsTo(User::class, 'approver_1_id');
+    }
+
+    /**
+     * Relasi ke model User sebagai Atasan 2
+     */
+    public function approver2()
+    {
+        // Menghubungkan kolom approver_2_id ke kolom id di tabel users
+        return $this->belongsTo(User::class, 'approver_2_id');
+    }
 }

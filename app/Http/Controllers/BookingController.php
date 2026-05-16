@@ -14,40 +14,119 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class BookingController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        // Memuat relasi vehicle dan driver yang ada di Model
-        $bookings = Booking::with(['vehicle', 'driver'])
-            ->get()
-            ->map(function ($booking) {
-                // Membuat relasi 'approver1' dan 'approver2' secara dinamis tanpa mengubah file Model
-                $booking->setRelation('approver1', User::find($booking->approver_1_id));
-                $booking->setRelation('approver2', User::find($booking->approver_2_id));
-                return $booking;
-            });
+        $search = $request->get('search');
+        $sortBy = $request->get('sort_by', 'id');
+        $sortOrder = $request->get('sort_order', 'desc');
 
-        return view('admin.booking.table', compact('bookings'));
+        // OPTIMASI: Eager loading approver langsung menggunakan relasi bawaan (pastikan relasi ini ada di Model Booking)
+        // Jika belum ada relasi di model, disiasati dengan 'with' user untuk mereduksi N+1 Query
+        $query = Booking::with(['vehicle', 'driver', 'approver1', 'approver2']);
+
+        // Fitur Pencarian
+        if (!empty($search)) {
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('vehicle', function ($vehicleQuery) use ($search) {
+                    $vehicleQuery->where('name', 'like', "%{$search}%")
+                        ->orWhere('plate_number', 'like', "%{$search}%");
+                })->orWhereHas('driver', function ($driverQuery) use ($search) {
+                    $driverQuery->where('name', 'like', "%{$search}%");
+                });
+            });
+        }
+
+        // Fitur Pengurutan (Sorting)
+        if ($sortBy === 'vehicle') {
+            $query->join('vehicles', 'bookings.vehicle_id', '=', 'vehicles.id')
+                ->orderBy('vehicles.name', $sortOrder)
+                ->select('bookings.*');
+        } elseif ($sortBy === 'driver') {
+            $query->join('drivers', 'bookings.driver_id', '=', 'drivers.id')
+                ->orderBy('drivers.name', $sortOrder)
+                ->select('bookings.*');
+        } else {
+            $allowedColumns = ['id', 'start_date', 'status'];
+            $actualSortBy = in_array($sortBy, $allowedColumns) ? $sortBy : 'id';
+            $query->orderBy($actualSortBy, $sortOrder);
+        }
+
+        $bookings = $query->paginate(10)->withQueryString();
+
+        // Fallback jika relasi di model belum dibuat (Eager loading manual yang aman)
+        $bookings->getCollection()->transform(function ($booking) {
+            if (!$booking->relationLoaded('approver1')) {
+                $booking->setRelation('approver1', User::find($booking->approver_1_id));
+            }
+            if (!$booking->relationLoaded('approver2')) {
+                $booking->setRelation('approver2', User::find($booking->approver_2_id));
+            }
+            return $booking;
+        });
+
+        return view('admin.booking.table', compact('bookings', 'search', 'sortBy', 'sortOrder'));
     }
 
     /**
      * Menampilkan daftar booking khusus APPROVER
      * URL: GET approver/bookings (Route Name: approver.bookings.index)
      */
-    public function approverIndexList()
+    public function approverIndexList(Request $request)
     {
         $user = Auth::user();
+        $search = $request->get('search');
+        $sortBy = $request->get('sort_by', 'id');
+        $sortOrder = $request->get('sort_order', 'desc');
 
-        $bookings = Booking::with(['vehicle', 'driver'])
-            ->where('approver_1_id', $user->id)
-            ->orWhere('approver_2_id', $user->id)
-            ->get()
-            ->map(function ($booking) {
-                $booking->setRelation('approver1', User::find($booking->approver_1_id));
-                $booking->setRelation('approver2', User::find($booking->approver_2_id));
-                return $booking;
+        // Query dasar: Hanya mengambil data di mana user yang login bertindak sebagai Approver 1 atau Approver 2
+        $query = Booking::with(['vehicle', 'driver', 'approver1', 'approver2'])
+            ->where(function ($q) use ($user) {
+                $q->where('approver_1_id', $user->id)
+                    ->orWhere('approver_2_id', $user->id);
             });
 
-        return view('approver.booking.table', compact('bookings'));
+        // Fitur Pencarian Data Kendaraan / Driver untuk Atasan
+        if (!empty($search)) {
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('vehicle', function ($vehicleQuery) use ($search) {
+                    $vehicleQuery->where('name', 'like', "%{$search}%")
+                        ->orWhere('plate_number', 'like', "%{$search}%");
+                })->orWhereHas('driver', function ($driverQuery) use ($search) {
+                    $driverQuery->where('name', 'like', "%{$search}%");
+                });
+            });
+        }
+
+        // Fitur Sorting Dinamis untuk Atasan
+        if ($sortBy === 'vehicle') {
+            $query->join('vehicles', 'bookings.vehicle_id', '=', 'vehicles.id')
+                ->orderBy('vehicles.name', $sortOrder)
+                ->select('bookings.*');
+        } elseif ($sortBy === 'driver') {
+            $query->join('drivers', 'bookings.driver_id', '=', 'drivers.id')
+                ->orderBy('drivers.name', $sortOrder)
+                ->select('bookings.*');
+        } else {
+            $allowedColumns = ['id', 'start_date', 'status'];
+            $actualSortBy = in_array($sortBy, $allowedColumns) ? $sortBy : 'id';
+            $query->orderBy($actualSortBy, $sortOrder);
+        }
+
+        // Eksekusi Pagination (Menjaga keutuhan query string filter saat pindah page)
+        $bookings = $query->paginate(10)->withQueryString();
+
+        // Menyiasati objek jika relasi manual dibutuhkan
+        $bookings->getCollection()->transform(function ($booking) {
+            if (!$booking->relationLoaded('approver1')) {
+                $booking->setRelation('approver1', User::find($booking->approver_1_id));
+            }
+            if (!$booking->relationLoaded('approver2')) {
+                $booking->setRelation('approver2', User::find($booking->approver_2_id));
+            }
+            return $booking;
+        });
+
+        return view('approver.booking.table', compact('bookings', 'search', 'sortBy', 'sortOrder'));
     }
 
     public function create()

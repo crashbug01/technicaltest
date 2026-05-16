@@ -12,16 +12,40 @@ class UserController extends Controller
     /**
      * Menampilkan daftar user yang memiliki role approver.
      */
-    public function index()
+    public function index(Request $request)
     {
-        // Menggunakan withTrashed() agar Admin bisa melihat siapa saja approver yang dinonaktifkan
-        $approvers = User::where('role', 'approver')
-            ->withCount(['approvalsLevel1', 'approvalsLevel2'])
-            ->withTrashed()
-            ->latest()
-            ->get();
+        // 1. Ambil parameter dari URL untuk search dan sort (jika kosong, gunakan default)
+        $search = $request->get('search');
+        $sortBy = $request->get('sort_by', 'created_at');
+        $sortOrder = $request->get('sort_order', 'desc');
 
-        return view('admin.approver.tabel', compact('approvers'));
+        // 2. Query dasar (Tetap menggunakan dengan dengan withTrashed() sesuai kode Anda)
+        $query = User::where('role', 'approver')
+            ->withCount(['approvalsLevel1', 'approvalsLevel2'])
+            ->withTrashed();
+
+        // 3. Logika Pencarian (Search)
+        if (!empty($search)) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'LIKE', "%{$search}%")
+                    ->orWhere('email', 'LIKE', "%{$search}%");
+            });
+        }
+
+        // 4. Logika Pengurutan (Sort)
+        $allowedSorts = ['name', 'email', 'created_at'];
+        if (in_array($sortBy, $allowedSorts)) {
+            $query->orderBy($sortBy, $sortOrder);
+        } else {
+            $query->orderBy('created_at', 'desc');
+        }
+
+        // 5. Paginasi (Pagination) - Mengganti ->get() menjadi ->paginate(10)
+        // appends() memastikan parameter search/sort tidak hilang saat Admin klik halaman 2, 3, dst.
+        $approvers = $query->paginate(10)->appends($request->all());
+
+        // Diarahkan ke file view 'admin.approver.tabel' sesuai dengan template Anda
+        return view('admin.approver.tabel', compact('approvers', 'search', 'sortBy', 'sortOrder'));
     }
 
     /**

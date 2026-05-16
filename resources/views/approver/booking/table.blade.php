@@ -35,34 +35,97 @@
             <div class="app-content">
                 <!--begin::Container-->
                 <div class="container-fluid">
-                    <div class="card mb-4">
-                        <div class="card-header">
-                            <h3 class="card-title">Persetujuan Pemesanan Kendaraan</h3>
+                    <div class="card card-outline card-primary mb-4">
+                        <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+                            <h3 class="card-title m-0">Persetujuan Pemesanan Kendaraan</h3>
+
+                            <!-- Fitur Pencarian -->
+                            <div class="ms-auto">
+                                <form action="{{ url()->current() }}" method="GET" class="d-flex m-0">
+                                    <!-- Menyimpan parameter sort saat user melakukan pencarian -->
+                                    <input type="hidden" name="sort_by" value="{{ $sortBy ?? 'id' }}">
+                                    <input type="hidden" name="sort_order" value="{{ $sortOrder ?? 'desc' }}">
+
+                                    <div class="input-group input-group-sm" style="width: 280px;">
+                                        <input type="text" name="search" class="form-control"
+                                            placeholder="Cari kendaraan, plat, atau driver..."
+                                            value="{{ $search ?? '' }}">
+                                        <button type="submit" class="btn btn-secondary">
+                                            <i class="fas fa-search"></i>
+                                        </button>
+                                        @if(!empty($search))
+                                            <a href="{{ url()->current() }}"
+                                                class="btn btn-outline-danger btn-sm d-flex align-items-center">Reset</a>
+                                        @endif
+                                    </div>
+                                </form>
+                            </div>
                         </div> <!-- /.card-header -->
-                        <div class="card-body">
+
+                        <div class="card-body p-0 table-responsive">
                             <!-- Notifikasi Status -->
                             @if(session('success'))
-                                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                                <div class="alert alert-success alert-dismissible fade show m-3" role="alert">
                                     {{ session('success') }}
                                     <button type="button" class="btn-close" data-bs-dismiss="alert"
                                         aria-label="Close"></button>
                                 </div>
                             @endif
                             @if(session('error'))
-                                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                <div class="alert alert-danger alert-dismissible fade show m-3" role="alert">
                                     {{ session('error') }}
                                     <button type="button" class="btn-close" data-bs-dismiss="alert"
                                         aria-label="Close"></button>
                                 </div>
                             @endif
 
-                            <table class="table table-bordered">
+                            <table class="table table-bordered table-striped m-0">
                                 <thead>
                                     <tr>
-                                        <th style="width: 10px">#</th>
-                                        <th>Kendaraan</th>
-                                        <th>Driver</th>
-                                        <th>Tanggal Pinjam</th>
+                                        <th style="width: 50px">#</th>
+
+                                        <!-- Sort: Kendaraan -->
+                                        <th>
+                                            <a href="{{ request()->fullUrlWithQuery(['sort_by' => 'vehicle_name', 'sort_order' => (($sortBy ?? '') == 'vehicle_name' && ($sortOrder ?? '') == 'asc') ? 'desc' : 'asc']) }}"
+                                                class="text-decoration-none text-dark d-block w-100">
+                                                Kendaraan
+                                                @if(($sortBy ?? '') == 'vehicle_name')
+                                                    <i
+                                                        class="fas fa-sort-alpha-{{ ($sortOrder ?? '') == 'asc' ? 'down' : 'up' }} ms-1 text-primary"></i>
+                                                @else
+                                                    <i class="fas fa-sort text-muted ms-1"></i>
+                                                @endif
+                                            </a>
+                                        </th>
+
+                                        <!-- Sort: Driver -->
+                                        <th>
+                                            <a href="{{ request()->fullUrlWithQuery(['sort_by' => 'driver_name', 'sort_order' => (($sortBy ?? '') == 'driver_name' && ($sortOrder ?? '') == 'asc') ? 'desc' : 'asc']) }}"
+                                                class="text-decoration-none text-dark d-block w-100">
+                                                Driver
+                                                @if(($sortBy ?? '') == 'driver_name')
+                                                    <i
+                                                        class="fas fa-sort-alpha-{{ ($sortOrder ?? '') == 'asc' ? 'down' : 'up' }} ms-1 text-primary"></i>
+                                                @else
+                                                    <i class="fas fa-sort text-muted ms-1"></i>
+                                                @endif
+                                            </a>
+                                        </th>
+
+                                        <!-- Sort: Tanggal Pinjam -->
+                                        <th>
+                                            <a href="{{ request()->fullUrlWithQuery(['sort_by' => 'start_date', 'sort_order' => (($sortBy ?? '') == 'start_date' && ($sortOrder ?? '') == 'asc') ? 'desc' : 'asc']) }}"
+                                                class="text-decoration-none text-dark d-block w-100">
+                                                Tanggal Pinjam
+                                                @if(($sortBy ?? '') == 'start_date')
+                                                    <i
+                                                        class="fas fa-sort-numeric-{{ ($sortOrder ?? '') == 'asc' ? 'down' : 'up' }} ms-1 text-primary"></i>
+                                                @else
+                                                    <i class="fas fa-sort text-muted ms-1"></i>
+                                                @endif
+                                            </a>
+                                        </th>
+
                                         <th>Peran Anda</th>
                                         <th>Status Saat Ini</th>
                                         <th style="width: 220px; text-align: center;">Aksi</th>
@@ -71,13 +134,13 @@
                                 <tbody>
                                     @forelse($bookings as $index => $booking)
                                         @php
-                                            // Cek posisi approver yang sedang login
                                             $isApprover1 = ($booking->approver_1_id == auth()->id());
                                             $isApprover2 = ($booking->approver_2_id == auth()->id());
                                         @endphp
 
                                         <tr class="align-middle">
-                                            <td>{{ $index + 1 }}.</td>
+                                            <!-- Nomor urut otomatis kalkulasi halaman paginasi -->
+                                            <td>{{ $bookings->firstItem() + $index }}.</td>
                                             <td>
                                                 <strong>{{ $booking->vehicle->name ?? 'N/A' }}</strong>
                                                 <br><small
@@ -97,7 +160,7 @@
                                                     <span class="badge bg-info text-dark">Atasan 1</span>
                                                 @endif
                                                 @if($isApprover2)
-                                                    <span class="badge bg-md bg-secondary">Atasan 2</span>
+                                                    <span class="badge bg-secondary">Atasan 2</span>
                                                 @endif
                                             </td>
                                             <td>
@@ -112,11 +175,9 @@
                                                 @endif
                                             </td>
                                             <td class="text-center">
-
                                                 {{-- LOGIKA AKSI UNTUK ATASAN 1 --}}
                                                 @if($isApprover1)
                                                     @if($booking->status == 'pending')
-                                                        <!-- Tombol Setuju / Tolak jika masih pending -->
                                                         <div class="btn-group" role="group">
                                                             <form action="{{ route('approver.booking.approve', $booking->id) }}"
                                                                 method="POST" class="d-inline">
@@ -133,9 +194,8 @@
                                                             </form>
                                                         </div>
                                                     @elseif($booking->status == 'approved_lvl_1')
-                                                        <!-- BISA BATAL: Karena Atasan 2 BELUM melakukan approval (status masih approved_lvl_1) -->
                                                         <form action="{{ route('approver.booking.cancel', $booking->id) }}"
-                                                            method="POST">
+                                                            method="POST" class="m-0">
                                                             @csrf
                                                             <button type="submit" class="btn btn-sm btn-warning"
                                                                 onclick="return confirm('Batalkan persetujuan Anda?')">
@@ -143,7 +203,6 @@
                                                             </button>
                                                         </form>
                                                     @else
-                                                        <!-- TIDAK BISA DIOTAK-ATIK: Jika sudah approved_final atau rejected -->
                                                         <span class="text-muted"><small>Keputusan Final</small></span>
                                                     @endif
                                                 @endif
@@ -151,7 +210,6 @@
                                                 {{-- LOGIKA AKSI UNTUK ATASAN 2 --}}
                                                 @if($isApprover2)
                                                     @if($booking->status == 'approved_lvl_1')
-                                                        <!-- Tombol Setuju / Tolak baru muncul setelah Atasan 1 menyetujui -->
                                                         <div class="btn-group" role="group">
                                                             <form action="{{ route('approver.booking.approve', $booking->id) }}"
                                                                 method="POST" class="d-inline">
@@ -170,9 +228,8 @@
                                                     @elseif($booking->status == 'pending')
                                                         <span class="text-muted"><small>Menunggu Atasan 1</small></span>
                                                     @elseif($booking->status == 'approved_final')
-                                                        <!-- BISA BATAL: Atasan 2 bisa membatalkan miliknya sendiri karena statusnya baru saja dirubah ke approved_final olehnya (Atasan 1 sudah setuju, tapi Atasan 2 ingin menarik kembali) -->
                                                         <form action="{{ route('approver.booking.cancel', $booking->id) }}"
-                                                            method="POST">
+                                                            method="POST" class="m-0">
                                                             @csrf
                                                             <button type="submit" class="btn btn-sm btn-warning"
                                                                 onclick="return confirm('Batalkan persetujuan Final Anda?')">
@@ -183,19 +240,60 @@
                                                         <span class="text-muted"><small>Ditolak</small></span>
                                                     @endif
                                                 @endif
-
                                             </td>
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="7" class="text-center text-muted">Tidak ada pengajuan pemesanan
-                                                yang membutuhkan persetujuan Anda saat ini.</td>
+                                            <td colspan="7" class="text-center text-muted py-4">
+                                                <i class="fas fa-folder-open fa-2x mb-2 d-block"></i>
+                                                Tidak ada pengajuan pemesanan yang membutuhkan persetujuan Anda saat ini.
+                                            </td>
                                         </tr>
                                     @endforelse
                                 </tbody>
                             </table>
                         </div> <!-- /.card-body -->
-                    </div> <!-- /.card -->
+
+                        <!-- Footer: Navigasi Halaman Pagination Kustom Bootstrap -->
+                        <div class="card-footer clearfix">
+                            @if ($bookings->hasPages())
+                                <div class="float-start text-muted sm">
+                                    Menampilkan {{ $bookings->firstItem() }} sampai {{ $bookings->lastItem() }} dari
+                                    {{ $bookings->total() }} pengajuan.
+                                </div>
+                                <ul class="pagination pagination-sm m-0 float-end">
+                                    {{-- Tombol Sebelumnya --}}
+                                    @if ($bookings->onFirstPage())
+                                        <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+                                    @else
+                                        <li class="page-item"><a class="page-link"
+                                                href="{{ $bookings->appends(request()->query())->previousPageUrl() }}"
+                                                rel="prev">&laquo;</a></li>
+                                    @endif
+
+                                    {{-- Angka Nomor Halaman --}}
+                                    @foreach ($bookings->getUrlRange(1, $bookings->lastPage()) as $page => $url)
+                                        @if ($page == $bookings->currentPage())
+                                            <li class="page-item active"><span class="page-link">{{ $page }}</span></li>
+                                        @else
+                                            <li class="page-item"><a class="page-link"
+                                                    href="{{ $bookings->appends(request()->query())->getUrlRange($page, $page)[$page] }}">{{ $page }}</a>
+                                            </li>
+                                        @endif
+                                    @endforeach
+
+                                    {{-- Tombol Selanjutnya --}}
+                                    @if ($bookings->hasMorePages())
+                                        <li class="page-item"><a class="page-link"
+                                                href="{{ $bookings->appends(request()->query())->nextPageUrl() }}"
+                                                rel="next">&raquo;</a></li>
+                                    @else
+                                        <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+                                    @endif
+                                </ul>
+                            @endif
+                        </div>
+                    </div>
                 </div>
                 <!--end::Container-->
             </div>

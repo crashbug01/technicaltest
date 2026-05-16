@@ -35,32 +35,96 @@
             <div class="app-content">
                 <!--begin::Container-->
                 <div class="container-fluid">
-                    <div class="card">
-                        <div class="card-header d-flex justify-content-between align-items-center">
+                    <div class="card card-outline card-primary mb-4">
+                        <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
                             <h3 class="card-title">Daftar Kendaraan</h3>
-                            <!-- Opsional: Tambahkan tombol tambah data jika diperlukan -->
-                            <a href="{{ route('vehicle.create') }}" class="btn btn-sm btn-primary ms-auto">
-                                <i class="fas fa-plus"></i> Tambah Kendaraan
-                            </a>
+
+                            <!-- Bagian Kanan: Fitur Pencarian & Tombol Tambah Data -->
+                            <div class="d-flex align-items-center gap-2 ms-auto">
+                                <!-- Form Pencarian -->
+                                <form action="{{ url()->current() }}" method="GET" class="d-flex m-0">
+                                    <!-- Mempertahankan parameter sorting yang sedang aktif saat mencari -->
+                                    <input type="hidden" name="sort_by" value="{{ $sortBy ?? 'id' }}">
+                                    <input type="hidden" name="sort_order" value="{{ $sortOrder ?? 'desc' }}">
+
+                                    <div class="input-group input-group-sm" style="width: 260px;">
+                                        <input type="text" name="search" class="form-control"
+                                            placeholder="Cari nama atau nomor plat..." value="{{ $search ?? '' }}">
+                                        <button type="submit" class="btn btn-secondary">
+                                            <i class="fas fa-search"></i>
+                                        </button>
+                                        @if(!empty($search))
+                                            <a href="{{ url()->current() }}"
+                                                class="btn btn-outline-danger btn-sm d-flex align-items-center">Reset</a>
+                                        @endif
+                                    </div>
+                                </form>
+
+                                <!-- Tombol Tambah Data -->
+                                <a href="{{ route('vehicle.create') }}" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-plus"></i> Tambah Kendaraan
+                                </a>
+                            </div>
                         </div> <!-- /.card-header -->
 
-                        <div class="card-body">
-                            <table class="table table-bordered">
+                        <div class="card-body p-0 table-responsive">
+                            <table class="table table-bordered table-striped m-0">
                                 <thead>
                                     <tr>
-                                        <th style="width: 10px">#</th>
-                                        <th>Nama Kendaraan</th>
-                                        <th>Nomor Plat</th>
+                                        <th style="width: 50px">#</th>
+
+                                        <!-- Fitur Sort: Nama Kendaraan -->
+                                        <th>
+                                            <a href="{{ request()->fullUrlWithQuery(['sort_by' => 'name', 'sort_order' => (($sortBy ?? '') == 'name' && ($sortOrder ?? '') == 'asc') ? 'desc' : 'asc']) }}"
+                                                class="text-decoration-none text-dark d-block w-100">
+                                                Nama Kendaraan
+                                                @if(($sortBy ?? '') == 'name')
+                                                    <i
+                                                        class="fas fa-sort-alpha-{{ ($sortOrder ?? '') == 'asc' ? 'down' : 'up' }} ms-1 text-primary"></i>
+                                                @else
+                                                    <i class="fas fa-sort text-muted ms-1"></i>
+                                                @endif
+                                            </a>
+                                        </th>
+
+                                        <!-- Fitur Sort: Nomor Plat -->
+                                        <th>
+                                            <a href="{{ request()->fullUrlWithQuery(['sort_by' => 'plate_number', 'sort_order' => (($sortBy ?? '') == 'plate_number' && ($sortOrder ?? '') == 'asc') ? 'desc' : 'asc']) }}"
+                                                class="text-decoration-none text-dark d-block w-100">
+                                                Nomor Plat
+                                                @if(($sortBy ?? '') == 'plate_number')
+                                                    <i
+                                                        class="fas fa-sort-alpha-{{ ($sortOrder ?? '') == 'asc' ? 'down' : 'up' }} ms-1 text-primary"></i>
+                                                @else
+                                                    <i class="fas fa-sort text-muted ms-1"></i>
+                                                @endif
+                                            </a>
+                                        </th>
+
                                         <th>Jenis</th>
                                         <th>Kepemilikan</th>
-                                        <th>Konsumsi BBM</th>
-                                        <th style="width: 150px" class="text-center">Aksi</th>
+
+                                        <!-- Fitur Sort: Konsumsi BBM -->
+                                        <th>
+                                            <a href="{{ request()->fullUrlWithQuery(['sort_by' => 'fuel_consumption', 'sort_order' => (($sortBy ?? '') == 'fuel_consumption' && ($sortOrder ?? '') == 'asc') ? 'desc' : 'asc']) }}"
+                                                class="text-decoration-none text-dark d-block w-100">
+                                                Konsumsi BBM
+                                                @if(($sortBy ?? '') == 'fuel_consumption')
+                                                    <i
+                                                        class="fas fa-sort-numeric-{{ ($sortOrder ?? '') == 'asc' ? 'down' : 'up' }} ms-1 text-primary"></i>
+                                                @else
+                                                    <i class="fas fa-sort text-muted ms-1"></i>
+                                                @endif
+                                            </a>
+                                        </th>
+                                        <th style="width: 160px" class="text-center">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @forelse($vehicles as $index => $vehicle)
                                         <tr class="align-middle">
-                                            <td>{{ $index + 1 }}.</td>
+                                            <!-- Nomor urut otomatis yang sinkron dengan halaman paginasi -->
+                                            <td>{{ $vehicles->firstItem() + $index }}.</td>
                                             <td><strong>{{ $vehicle->name }}</strong></td>
                                             <td><span class="badge text-bg-secondary">{{ $vehicle->plate_number }}</span>
                                             </td>
@@ -78,22 +142,19 @@
                                                     <span class="badge text-bg-dark">Sewa / Rental</span>
                                                 @endif
                                             </td>
-                                            <!-- Tambahkan Kolom Isi Ini -->
                                             <td>
                                                 <i class="fas fa-gas-pump text-muted me-1"></i>
                                                 {{ $vehicle->fuel_consumption }} Km/Liter
                                             </td>
                                             <td class="text-center">
                                                 <div class="d-flex justify-content-center gap-2">
-                                                    <!-- Tombol Edit -->
                                                     <a href="{{ route('vehicle.edit', $vehicle->id) }}"
                                                         class="btn btn-sm btn-warning">
                                                         <i class="fas fa-edit"></i> Edit
                                                     </a>
 
-                                                    <!-- Form & Tombol Delete -->
                                                     <form action="{{ route('vehicle.destroy', $vehicle->id) }}"
-                                                        method="POST"
+                                                        method="POST" class="m-0"
                                                         onsubmit="return confirm('Apakah Anda yakin ingin menghapus kendaraan ini?');">
                                                         @csrf
                                                         @method('DELETE')
@@ -105,18 +166,50 @@
                                             </td>
                                         </tr>
                                     @empty
-                                        <!-- ... -->
+                                        <tr>
+                                            <td colspan="7" class="text-center text-muted py-4">
+                                                <i class="fas fa-car-crash fa-2x mb-2 d-block"></i>
+                                                Data kendaraan tidak ditemukan atau belum terisi.
+                                            </td>
+                                        </tr>
                                     @endforelse
                                 </tbody>
                             </table>
                         </div> <!-- /.card-body -->
 
+                        <!-- Bagian Footer: Navigasi Halaman (Pagination) Dinamis Kustom -->
                         <div class="card-footer clearfix">
-                            <!-- Jika Anda menggunakan pagination di controller (misal: Vehicle::paginate(10)) -->
-                            @if(method_exists($vehicles, 'links'))
-                                <div class="float-end">
-                                    {{ $vehicles->links() }}
-                                </div>
+                            @if ($vehicles->hasPages())
+                                <ul class="pagination pagination-sm m-0 float-end">
+                                    {{-- Tombol Halaman Sebelumnya --}}
+                                    @if ($vehicles->onFirstPage())
+                                        <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+                                    @else
+                                        <li class="page-item"><a class="page-link"
+                                                href="{{ $vehicles->appends(request()->all())->previousPageUrl() }}"
+                                                rel="prev">&laquo;</a></li>
+                                    @endif
+
+                                    {{-- Nomor Urutan Angka Halaman --}}
+                                    @foreach ($vehicles->getUrlRange(1, $vehicles->lastPage()) as $page => $url)
+                                        @if ($page == $vehicles->currentPage())
+                                            <li class="page-item active"><span class="page-link">{{ $page }}</span></li>
+                                        @else
+                                            <li class="page-item"><a class="page-link"
+                                                    href="{{ $vehicles->appends(request()->all())->getUrlRange($page, $page)[$page] }}">{{ $page }}</a>
+                                            </li>
+                                        @endif
+                                    @endforeach
+
+                                    {{-- Tombol Halaman Selanjutnya --}}
+                                    @if ($vehicles->hasMorePages())
+                                        <li class="page-item"><a class="page-link"
+                                                href="{{ $vehicles->appends(request()->all())->nextPageUrl() }}"
+                                                rel="next">&raquo;</a></li>
+                                    @else
+                                        <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+                                    @endif
+                                </ul>
                             @endif
                         </div>
                     </div> <!-- /.card -->

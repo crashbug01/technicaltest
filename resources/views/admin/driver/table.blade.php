@@ -36,21 +36,70 @@
                 <!--begin::Container-->
                 <div class="container-fluid">
                     <div class="card">
-                        <div class="card-header d-flex justify-content-between align-items-center">
+                        <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
                             <h3 class="card-title">Daftar Driver</h3>
-                            <!-- Opsional: Tambahkan tombol tambah data jika diperlukan -->
-                            <a href="{{ route('admin.driver.create') }}" class="btn btn-sm btn-primary ms-auto">
-                                <i class="fas fa-plus"></i> Tambah Kendaraan
-                            </a>
+
+                            <!-- Kombinasi Input Pencarian & Tombol Tambah Data -->
+                            <div class="d-flex align-items-center gap-2 ms-auto">
+                                <!-- Form Pencarian Dinamis -->
+                                <form action="{{ route('admin.driver.index') }}" method="GET" class="d-flex m-0">
+                                    <!-- Menyertakan parameter sort agar filter pengurutan tidak hilang saat mencari kata kunci -->
+                                    <input type="hidden" name="sort_by" value="{{ $sortBy }}">
+                                    <input type="hidden" name="sort_order" value="{{ $sortOrder }}">
+
+                                    <div class="input-group input-group-sm" style="width: 250px;">
+                                        <input type="text" name="search" class="form-control"
+                                            placeholder="Cari nama atau telepon..." value="{{ $search }}">
+                                        <button type="submit" class="btn btn-secondary">
+                                            <i class="fas fa-search"></i>
+                                        </button>
+                                        @if(!empty($search))
+                                            <a href="{{ route('admin.driver.index') }}"
+                                                class="btn btn-outline-danger btn-sm d-flex align-items-center">Reset</a>
+                                        @endif
+                                    </div>
+                                </form>
+
+                                <a href="{{ route('admin.driver.create') }}" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-plus"></i> Tambah Driver
+                                </a>
+                            </div>
                         </div> <!-- /.card-header -->
 
-                        <div class="card-body">
-                            <table class="table table-bordered table-striped">
+                        <div class="card-body p-0 table-responsive">
+                            <table class="table table-bordered table-striped m-0">
                                 <thead>
                                     <tr>
-                                        <th style="width: 10px">#</th>
-                                        <th>Nama Pengemudi</th>
-                                        <th>Nomor Telepon / WA</th>
+                                        <th style="width: 50px">#</th>
+
+                                        <!-- Fitur Sort Kolom Nama Pengemudi -->
+                                        <th>
+                                            <a href="{{ route('admin.driver.index', ['search' => $search, 'sort_by' => 'name', 'sort_order' => ($sortBy == 'name' && $sortOrder == 'asc') ? 'desc' : 'asc']) }}"
+                                                class="text-decoration-none text-dark d-block w-100">
+                                                Nama Pengemudi
+                                                @if($sortBy == 'name')
+                                                    <i
+                                                        class="fas fa-sort-alpha-{{ $sortOrder == 'asc' ? 'down' : 'up' }} ms-1 text-primary"></i>
+                                                @else
+                                                    <i class="fas fa-sort text-muted ms-1"></i>
+                                                @endif
+                                            </a>
+                                        </th>
+
+                                        <!-- Fitur Sort Kolom Nomor Telepon -->
+                                        <th>
+                                            <a href="{{ route('admin.driver.index', ['search' => $search, 'sort_by' => 'phone', 'sort_order' => ($sortBy == 'phone' && $sortOrder == 'asc') ? 'desc' : 'asc']) }}"
+                                                class="text-decoration-none text-dark d-block w-100">
+                                                Nomor Telepon / WA
+                                                @if($sortBy == 'phone')
+                                                    <i
+                                                        class="fas fa-sort-numeric-{{ $sortOrder == 'asc' ? 'down' : 'up' }} ms-1 text-primary"></i>
+                                                @else
+                                                    <i class="fas fa-sort text-muted ms-1"></i>
+                                                @endif
+                                            </a>
+                                        </th>
+
                                         <th>Total Menangani Pesanan</th>
                                         <th style="width: 150px" class="text-center">Aksi</th>
                                     </tr>
@@ -58,7 +107,8 @@
                                 <tbody>
                                     @forelse($drivers as $index => $driver)
                                         <tr class="align-middle">
-                                            <td>{{ $index + 1 }}.</td>
+                                            <!-- Perbaikan Penomoran Otomatis Mengikuti Halaman Paginasi -->
+                                            <td>{{ $drivers->firstItem() + $index }}.</td>
                                             <td><strong>{{ $driver->name }}</strong></td>
                                             <td>
                                                 <span class="badge text-bg-light border">
@@ -66,9 +116,8 @@
                                                 </span>
                                             </td>
                                             <td>
-                                                <!-- Menggunakan relasi bookings() untuk menghitung jumlah tugas -->
                                                 <span class="badge text-bg-secondary">
-                                                    {{ $driver->bookings_count ?? $driver->bookings->count() }} Kali Tugas
+                                                    {{ $driver->bookings_count }} Kali Tugas
                                                 </span>
                                             </td>
                                             <td class="text-center">
@@ -81,7 +130,7 @@
 
                                                     <!-- Form & Tombol Delete Driver -->
                                                     <form action="{{ route('admin.driver.destroy', $driver->id) }}"
-                                                        method="POST"
+                                                        method="POST" class="m-0"
                                                         onsubmit="return confirm('Apakah Anda yakin ingin menghapus pengemudi ini?');">
                                                         @csrf
                                                         @method('DELETE')
@@ -96,22 +145,45 @@
                                         <tr class="text-center">
                                             <td colspan="5" class="text-muted py-4">
                                                 <i class="fas fa-users-slash fa-2x mb-2 d-block"></i>
-                                                Belum ada data pengemudi yang terdaftar.
+                                                Data pengemudi tidak ditemukan atau belum ada data yang terdaftar.
                                             </td>
                                         </tr>
                                     @endforelse
                                 </tbody>
                             </table>
-                        </div> <!-- /.card-body -->
 
+                        </div> <!-- /.card-body -->
                         <div class="card-footer clearfix">
-                            <!-- Jika Anda menggunakan pagination di controller (misal: Vehicle::paginate(10)) -->
-                            @if(method_exists($driver, 'links'))
-                                <div class="float-end">
-                                    {{ $driver->links() }}
-                                </div>
+                            @if ($drivers->hasPages())
+                                <ul class="pagination pagination-sm m-0 float-end">
+                                    {{-- Tombol Sebelumnya (Previous Page Link) --}}
+                                    @if ($drivers->onFirstPage())
+                                        <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+                                    @else
+                                        <li class="page-item"><a class="page-link" href="{{ $drivers->previousPageUrl() }}"
+                                                rel="prev">&laquo;</a></li>
+                                    @endif
+
+                                    {{-- Elemen Halaman (Daftar Angka Halaman) --}}
+                                    @foreach ($drivers->getUrlRange(1, $drivers->lastPage()) as $page => $url)
+                                        @if ($page == $drivers->currentPage())
+                                            <li class="page-item active"><span class="page-link">{{ $page }}</span></li>
+                                        @else
+                                            <li class="page-item"><a class="page-link" href="{{ $url }}">{{ $page }}</a></li>
+                                        @endif
+                                    @endforeach
+
+                                    {{-- Tombol Selanjutnya (Next Page Link) --}}
+                                    @if ($drivers->hasMorePages())
+                                        <li class="page-item"><a class="page-link" href="{{ $drivers->nextPageUrl() }}"
+                                                rel="next">&raquo;</a></li>
+                                    @else
+                                        <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+                                    @endif
+                                </ul>
                             @endif
                         </div>
+
                     </div> <!-- /.card -->
                 </div>
                 <!--end::Container-->

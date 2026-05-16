@@ -35,22 +35,72 @@
             <div class="app-content">
                 <!--begin::Container-->
                 <div class="container-fluid">
-                    <div class="card">
-                        <div class="card-header d-flex justify-content-between align-items-center">
+                    <div class="card card-outline card-primary">
+                        <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
                             <h3 class="card-title">Daftar Akun Approver</h3>
-                            <!-- Tombol tambah data diarahkan ke form create approver -->
-                            <a href="{{ route('admin.approver.create') }}" class="btn btn-sm btn-primary ms-auto">
-                                <i class="fas fa-plus"></i> Tambah Approver
-                            </a>
+
+                            <!-- Bagian Kanan: Fitur Cari & Tombol Tambah Data -->
+                            <div class="d-flex align-items-center gap-2 ms-auto">
+                                <!-- Form Pencarian -->
+                                <form action="{{ route('admin.approver.index') }}" method="GET" class="d-flex m-0">
+                                    <!-- Menyertakan parameter sort agar sorting saat ini tidak hilang ketika melakukan pencarian -->
+                                    <input type="hidden" name="sort_by" value="{{ $sortBy }}">
+                                    <input type="hidden" name="sort_order" value="{{ $sortOrder }}">
+
+                                    <div class="input-group input-group-sm" style="width: 250px;">
+                                        <input type="text" name="search" class="form-control"
+                                            placeholder="Cari nama atau email..." value="{{ $search }}">
+                                        <button type="submit" class="btn btn-secondary">
+                                            <i class="fas fa-search"></i>
+                                        </button>
+                                        @if(!empty($search))
+                                            <a href="{{ route('admin.approver.index') }}"
+                                                class="btn btn-outline-danger btn-sm d-flex align-items-center">Reset</a>
+                                        @endif
+                                    </div>
+                                </form>
+
+                                <!-- Tombol Tambah Data -->
+                                <a href="{{ route('admin.approver.create') }}" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-plus"></i> Tambah Approver
+                                </a>
+                            </div>
                         </div> <!-- /.card-header -->
 
-                        <div class="card-body">
-                            <table class="table table-bordered table-striped">
+                        <div class="card-body p-0 table-responsive">
+                            <table class="table table-bordered table-striped m-0">
                                 <thead>
                                     <tr>
-                                        <th style="width: 10px">#</th>
-                                        <th>Nama Approver</th>
-                                        <th>Alamat Email</th>
+                                        <th style="width: 50px">#</th>
+
+                                        <!-- Fitur Sort Kolom Nama -->
+                                        <th>
+                                            <a href="{{ route('admin.approver.index', ['search' => $search, 'sort_by' => 'name', 'sort_order' => ($sortBy == 'name' && $sortOrder == 'asc') ? 'desc' : 'asc']) }}"
+                                                class="text-decoration-none text-dark d-block w-100">
+                                                Nama Approver
+                                                @if($sortBy == 'name')
+                                                    <i
+                                                        class="fas fa-sort-alpha-{{ $sortOrder == 'asc' ? 'down' : 'up' }} ms-1 text-primary"></i>
+                                                @else
+                                                    <i class="fas fa-sort text-muted ms-1"></i>
+                                                @endif
+                                            </a>
+                                        </th>
+
+                                        <!-- Fitur Sort Kolom Email -->
+                                        <th>
+                                            <a href="{{ route('admin.approver.index', ['search' => $search, 'sort_by' => 'email', 'sort_order' => ($sortBy == 'email' && $sortOrder == 'asc') ? 'desc' : 'asc']) }}"
+                                                class="text-decoration-none text-dark d-block w-100">
+                                                Alamat Email
+                                                @if($sortBy == 'email')
+                                                    <i
+                                                        class="fas fa-sort-alpha-{{ $sortOrder == 'asc' ? 'down' : 'up' }} ms-1 text-primary"></i>
+                                                @else
+                                                    <i class="fas fa-sort text-muted ms-1"></i>
+                                                @endif
+                                            </a>
+                                        </th>
+
                                         <th>Verifikasi Awal (Lvl 1)</th>
                                         <th>Keputusan Akhir (Lvl 2)</th>
                                         <th>Status</th>
@@ -60,7 +110,8 @@
                                 <tbody>
                                     @forelse($approvers as $index => $approver)
                                         <tr class="align-middle">
-                                            <td>{{ $index + 1 }}.</td>
+                                            <!-- Penomoran otomatis dinamis kelipatan halaman paginasi -->
+                                            <td>{{ $approvers->firstItem() + $index }}.</td>
                                             <td><strong>{{ $approver->name }}</strong></td>
                                             <td>
                                                 <span class="text-secondary">
@@ -68,21 +119,17 @@
                                                 </span>
                                             </td>
                                             <td>
-                                                <!-- Menghitung dokumen yang masuk ke Approver 1 -->
                                                 <span class="badge text-bg-info">
-                                                    {{ $approver->approvals_level1_count ?? $approver->approvalsLevel1->count() }}
-                                                    Dokumen
+                                                    {{ $approver->approvals_level1_count }} Dokumen
                                                 </span>
                                             </td>
                                             <td>
-                                                <!-- Menghitung dokumen yang masuk ke Approver 2 -->
                                                 <span class="badge text-bg-success">
-                                                    {{ $approver->approvals_level2_count ?? $approver->approvalsLevel2->count() }}
-                                                    Dokumen
+                                                    {{ $approver->approvals_level2_count }} Dokumen
                                                 </span>
                                             </td>
                                             <td>
-                                                <!-- Deteksi Status Menggunakan Fitur Soft Deletes -->
+                                                <!-- Deteksi Status Akun Terhapus Sementara (Soft Delete) -->
                                                 @if($approver->trashed())
                                                     <span class="badge text-bg-danger">Nonaktif</span>
                                                 @else
@@ -91,7 +138,7 @@
                                             </td>
                                             <td class="text-center">
                                                 @if($approver->trashed())
-                                                    <!-- Kondisi 1: Jika Akun Nonaktif, Beri Tombol Restore -->
+                                                    <!-- Kondisi 1: Akun Nonaktif -> Hanya tombol Restore -->
                                                     <form action="{{ route('admin.approver.restore', $approver->id) }}"
                                                         method="POST" class="d-inline">
                                                         @csrf
@@ -101,7 +148,7 @@
                                                         </button>
                                                     </form>
                                                 @else
-                                                    <!-- Kondisi 2: Jika Akun Aktif, Beri Akses Edit dan Nonaktifkan (Delete) -->
+                                                    <!-- Kondisi 2: Akun Aktif -> Tombol Edit dan Soft Delete -->
                                                     <div class="d-flex justify-content-center gap-2">
                                                         <a href="{{ route('admin.approver.edit', $approver->id) }}"
                                                             class="btn btn-sm btn-warning">
@@ -109,7 +156,7 @@
                                                         </a>
 
                                                         <form action="{{ route('admin.approver.destroy', $approver->id) }}"
-                                                            method="POST"
+                                                            method="POST" class="d-inline"
                                                             onsubmit="return confirm('Apakah Anda yakin ingin menonaktifkan akun approver ini? (Riwayat pengajuan lama akan tetap aman)');">
                                                             @csrf
                                                             @method('DELETE')
@@ -125,7 +172,7 @@
                                         <tr class="text-center">
                                             <td colspan="7" class="text-muted py-4">
                                                 <i class="fas fa-user-slash fa-2x mb-2 d-block"></i>
-                                                Belum ada data user dengan role approver yang terdaftar.
+                                                Data tidak ditemukan atau belum ada data approver yang terdaftar.
                                             </td>
                                         </tr>
                                     @endforelse
@@ -134,11 +181,37 @@
                         </div> <!-- /.card-body -->
 
                         <div class="card-footer clearfix">
-                            <!-- Paginasi dinamis mendeteksi koleksi data di $approvers -->
-                            @if(method_exists($approvers, 'links'))
-                                <div class="float-end">
-                                    {{ $approvers->links() }}
-                                </div>
+                            @if ($approvers->hasPages())
+                                <ul class="pagination pagination-sm m-0 float-end">
+                                    {{-- Tombol Halaman Sebelumnya (Previous) --}}
+                                    @if ($approvers->onFirstPage())
+                                        <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+                                    @else
+                                        <li class="page-item"><a class="page-link"
+                                                href="{{ $approvers->appends(request()->all())->previousPageUrl() }}"
+                                                rel="prev">&laquo;</a></li>
+                                    @endif
+
+                                    {{-- Daftar Angka Halaman Dinamis --}}
+                                    @foreach ($approvers->getUrlRange(1, $approvers->lastPage()) as $page => $url)
+                                        @if ($page == $approvers->currentPage())
+                                            <li class="page-item active"><span class="page-link">{{ $page }}</span></li>
+                                        @else
+                                            <li class="page-item"><a class="page-link"
+                                                    href="{{ $approvers->appends(request()->all())->getUrlRange($page, $page)[$page] }}">{{ $page }}</a>
+                                            </li>
+                                        @endif
+                                    @endforeach
+
+                                    {{-- Tombol Halaman Selanjutnya (Next) --}}
+                                    @if ($approvers->hasMorePages())
+                                        <li class="page-item"><a class="page-link"
+                                                href="{{ $approvers->appends(request()->all())->nextPageUrl() }}"
+                                                rel="next">&raquo;</a></li>
+                                    @else
+                                        <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+                                    @endif
+                                </ul>
                             @endif
                         </div>
                     </div> <!-- /.card -->

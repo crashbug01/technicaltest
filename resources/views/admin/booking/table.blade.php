@@ -35,42 +35,108 @@
             <div class="app-content">
                 <!--begin::Container-->
                 <div class="container-fluid">
-                    <div class="card mb-4">
-                        <div class="card-header d-flex justify-content-between align-items-center">
+                    <div class="card card-outline card-primary mb-4">
+                        <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
                             <h3 class="card-title">Daftar Persetujuan Kendaraan (Admin)</h3>
-                            <a href="{{ route('admin.booking.create') }}"
-                                class="btn btn-primary btn-sm float-end ms-auto">
-                                <i class="fas fa-plus"></i> Tambah Pesanan
-                            </a>
+
+                            <!-- Bagian Kanan: Fitur Cari & Tombol Tambah Data -->
+                            <div class="d-flex align-items-center gap-2 ms-auto">
+                                <!-- Form Pencarian -->
+                                <form action="{{ route('admin.booking.index') }}" method="GET" class="d-flex m-0">
+                                    <!-- Mempertahankan parameter sort yang aktif saat mencari data -->
+                                    <input type="hidden" name="sort_by" value="{{ $sortBy ?? 'id' }}">
+                                    <input type="hidden" name="sort_order" value="{{ $sortOrder ?? 'desc' }}">
+
+                                    <div class="input-group input-group-sm" style="width: 260px;">
+                                        <input type="text" name="search" class="form-control"
+                                            placeholder="Cari kendaraan atau driver..." value="{{ $search ?? '' }}">
+                                        <button type="submit" class="btn btn-secondary">
+                                            <i class="fas fa-search"></i>
+                                        </button>
+                                        @if(!empty($search))
+                                            <a href="{{ route('admin.booking.index') }}"
+                                                class="btn btn-outline-danger btn-sm d-flex align-items-center">Reset</a>
+                                        @endif
+                                    </div>
+                                </form>
+
+                                <!-- Tombol Tambah Data -->
+                                <a href="{{ route('admin.booking.create') }}" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-plus"></i> Tambah Pesanan
+                                </a>
+                            </div>
                         </div> <!-- /.card-header -->
 
-                        <div class="card-body">
+                        <div class="card-body p-0 table-responsive">
                             <!-- Notifikasi Sukses -->
                             @if(session('success'))
-                                <div class="alert alert-success alert-dismissible fade show" role="alert">
-                                    {{ session('success') }}
-                                    <button type="button" class="btn-close" data-bs-dismiss="alert"
-                                        aria-label="Close"></button>
+                                <div class="p-3 pb-0">
+                                    <div class="alert alert-success alert-dismissible fade show m-0" role="alert">
+                                        <i class="fas fa-check-circle me-1"></i> {{ session('success') }}
+                                        <button type="button" class="btn-close" data-bs-dismiss="alert"
+                                            aria-label="Close"></button>
+                                    </div>
                                 </div>
                             @endif
 
-                            <table class="table table-bordered">
+                            <table class="table table-bordered table-striped m-0">
                                 <thead>
                                     <tr>
-                                        <th style="width: 10px">#</th>
-                                        <th>Kendaraan</th>
-                                        <th>Driver</th>
-                                        <th>Tanggal Pinjam</th>
+                                        <th style="width: 50px">#</th>
+
+                                        <!-- Fitur Sort Kolom Kendaraan -->
+                                        <th>
+                                            <a href="{{ route('admin.booking.index', ['search' => $search ?? '', 'sort_by' => 'vehicle', 'sort_order' => (($sortBy ?? '') == 'vehicle' && ($sortOrder ?? '') == 'asc') ? 'desc' : 'asc']) }}"
+                                                class="text-decoration-none text-dark d-block w-100">
+                                                Kendaraan
+                                                @if(($sortBy ?? '') == 'vehicle')
+                                                    <i
+                                                        class="fas fa-sort-alpha-{{ ($sortOrder ?? '') == 'asc' ? 'down' : 'up' }} ms-1 text-primary"></i>
+                                                @else
+                                                    <i class="fas fa-sort text-muted ms-1"></i>
+                                                @endif
+                                            </a>
+                                        </th>
+
+                                        <!-- Fitur Sort Kolom Driver -->
+                                        <th>
+                                            <a href="{{ route('admin.booking.index', ['search' => $search ?? '', 'sort_by' => 'driver', 'sort_order' => (($sortBy ?? '') == 'driver' && ($sortOrder ?? '') == 'asc') ? 'desc' : 'asc']) }}"
+                                                class="text-decoration-none text-dark d-block w-100">
+                                                Driver
+                                                @if(($sortBy ?? '') == 'driver')
+                                                    <i
+                                                        class="fas fa-sort-alpha-{{ ($sortOrder ?? '') == 'asc' ? 'down' : 'up' }} ms-1 text-primary"></i>
+                                                @else
+                                                    <i class="fas fa-sort text-muted ms-1"></i>
+                                                @endif
+                                            </a>
+                                        </th>
+
+                                        <!-- Fitur Sort Kolom Tanggal Pinjam -->
+                                        <th>
+                                            <a href="{{ route('admin.booking.index', ['search' => $search ?? '', 'sort_by' => 'start_date', 'sort_order' => (($sortBy ?? '') == 'start_date' && ($sortOrder ?? '') == 'asc') ? 'desc' : 'asc']) }}"
+                                                class="text-decoration-none text-dark d-block w-100">
+                                                Tanggal Pinjam
+                                                @if(($sortBy ?? '') == 'start_date')
+                                                    <i
+                                                        class="fas fa-sort-numeric-{{ ($sortOrder ?? '') == 'asc' ? 'down' : 'up' }} ms-1 text-primary"></i>
+                                                @else
+                                                    <i class="fas fa-sort text-muted ms-1"></i>
+                                                @endif
+                                            </a>
+                                        </th>
+
                                         <th>Approver 1</th>
                                         <th>Approver 2</th>
                                         <th>Status Alur</th>
-                                        <th style="width: 100px; text-align: center;">Aksi</th>
+                                        <th style="width: 120px; text-align: center;">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @forelse($bookings as $index => $booking)
                                         <tr class="align-middle">
-                                            <td>{{ $index + 1 }}.</td>
+                                            <!-- Penomoran otomatis dinamis menyesuaikan halaman paginasi -->
+                                            <td>{{ $bookings->firstItem() + $index }}.</td>
                                             <td>
                                                 <strong>{{ $booking->vehicle->name ?? 'N/A' }}</strong>
                                                 <br><small
@@ -103,11 +169,9 @@
                                                 @endif
                                             </td>
                                             <td class="text-center">
-                                                <!-- Tombol Hapus Menggunakan Form Terbuka Masif -->
                                                 @if($booking->status == 'pending')
-                                                    <!-- Tombol Hapus Aktif jika masih pending -->
                                                     <form action="{{ route('admin.booking.destroy', $booking->id) }}"
-                                                        method="POST" class="d-inline"
+                                                        method="POST" class="m-0"
                                                         onsubmit="return confirm('Yakin ingin menghapus data ini?')">
                                                         @csrf
                                                         @method('DELETE')
@@ -116,7 +180,6 @@
                                                         </button>
                                                     </form>
                                                 @else
-                                                    <!-- Tombol Hapus Dinonaktifkan/Dikunci jika sudah diproses -->
                                                     <button class="btn btn-sm btn-secondary" disabled
                                                         title="Tidak dapat dihapus karena sudah diproses">
                                                         <i class="fas fa-lock"></i> Terkunci
@@ -126,20 +189,50 @@
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="8" class="text-center text-muted">Belum ada data pemesanan
-                                                kendaraan.</td>
+                                            <td colspan="8" class="text-center text-muted py-4">
+                                                <i class="fas fa-folder-open fa-2x mb-2 d-block"></i>
+                                                Belum ada data pemesanan kendaraan yang sesuai.
+                                            </td>
                                         </tr>
                                     @endforelse
                                 </tbody>
                             </table>
                         </div> <!-- /.card-body -->
 
+                        <!-- Bagian Footer: Navigasi Halaman (Pagination) Dinamis Berdasarkan Query -->
                         <div class="card-footer clearfix">
-                            <ul class="pagination pagination-sm m-0 float-end">
-                                <li class="page-item"> <a class="page-link" href="#">&laquo;</a> </li>
-                                <li class="page-item active"> <a class="page-link" href="#">1</a> </li>
-                                <li class="page-item"> <a class="page-link" href="#">&raquo;</a> </li>
-                            </ul>
+                            @if ($bookings->hasPages())
+                                <ul class="pagination pagination-sm m-0 float-end">
+                                    {{-- Tombol Previous --}}
+                                    @if ($bookings->onFirstPage())
+                                        <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+                                    @else
+                                        <li class="page-item"><a class="page-link"
+                                                href="{{ $bookings->appends(request()->all())->previousPageUrl() }}"
+                                                rel="prev">&laquo;</a></li>
+                                    @endif
+
+                                    {{-- Urutan Angka Halaman --}}
+                                    @foreach ($bookings->getUrlRange(1, $bookings->lastPage()) as $page => $url)
+                                        @if ($page == $bookings->currentPage())
+                                            <li class="page-item active"><span class="page-link">{{ $page }}</span></li>
+                                        @else
+                                            <li class="page-item"><a class="page-link"
+                                                    href="{{ $bookings->appends(request()->all())->getUrlRange($page, $page)[$page] }}">{{ $page }}</a>
+                                            </li>
+                                        @endif
+                                    @endforeach
+
+                                    {{-- Tombol Next --}}
+                                    @if ($bookings->hasMorePages())
+                                        <li class="page-item"><a class="page-link"
+                                                href="{{ $bookings->appends(request()->all())->nextPageUrl() }}"
+                                                rel="next">&raquo;</a></li>
+                                    @else
+                                        <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+                                    @endif
+                                </ul>
+                            @endif
                         </div>
                     </div> <!-- /.card -->
                 </div>
