@@ -8,7 +8,7 @@
 
             <!--end::Brand Image-->
             <!--begin::Brand Text-->
-            <span class="brand-text fw-light">ADMIN</span>
+            <span class="brand-text fw-light">APPROVER</span>
             <!--end::Brand Text-->
         </a>
         <!--end::Brand Link-->
@@ -20,7 +20,7 @@
             <!--begin::Sidebar Menu-->
             <ul class="nav sidebar-menu flex-column" data-lte-toggle="treeview" role="menu" data-accordion="false">
                 <li class="nav-item">
-                    <a href="/admin/dashboard" class="nav-link">
+                    <a href="/approver/dashboard" class="nav-link">
                         <i class="nav-icon bi bi-speedometer"></i>
                         <p>Dashboard</p>
                     </a>
