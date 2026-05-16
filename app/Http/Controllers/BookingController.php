@@ -9,6 +9,8 @@ use App\Models\Driver;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Exports\PeriodicBookingExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class BookingController extends Controller
 {
@@ -84,13 +86,24 @@ class BookingController extends Controller
 
     public function destroy($id)
     {
-        // 1. Cari data booking berdasarkan ID, jika tidak ada akan memunculkan error 404
+        // 1. Cari data booking berdasarkan ID
         $booking = Booking::findOrFail($id);
 
-        // 2. Hapus data tersebut
+        // 2. PROTEKSI: Cek apakah status sudah berubah dari 'pending'
+        // Jika statusnya 'approved_lvl_1', 'approved_final', atau bahkan jika sudah di-reject,
+        // Admin tidak boleh menghapusnya secara sepihak.
+        if ($booking->status !== 'pending') {
+            return redirect()->route('admin.booking.index')
+                ->with('error', 'Data tidak dapat dihapus karena sudah diproses atau disetujui oleh salah satu approver!');
+        }
+
+        // 3. Hapus data log approval yang terkait (jika ada)
+        Approval::where('booking_id', $booking->id)->delete();
+
+        // 4. Hapus data booking
         $booking->delete();
 
-        // 3. Alihkan halaman kembali dengan pesan sukses
+        // 5. Alihkan halaman kembali dengan pesan sukses
         return redirect()->route('admin.booking.index')
             ->with('success', 'Data persetujuan kendaraan berhasil dihapus.');
     }
@@ -123,5 +136,93 @@ class BookingController extends Controller
         }
 
         return back()->with('error', 'Anda tidak memiliki otoritas untuk menyetujui tahap ini.');
+    }
+
+    public function reject(Request $request, $id)
+    {
+        // 1. Cari data booking berdasarkan ID
+        $booking = Booking::findOrFail($id);
+        $user = auth()->user();
+        $level = 0;
+
+        // 2. Tentukan level approver mana yang melakukan penolakan
+        if ($user->id == $booking->approver_1_id && $booking->status == 'pending') {
+            $level = 1;
+        } elseif ($user->id == $booking->approver_2_id && $booking->status == 'approved_lvl_1') {
+            $level = 2;
+        }
+
+        // 3. Jika user yang login adalah approver yang sah dan posisi statusnya sesuai
+        if ($level > 0) {
+            // Ubah status booking menjadi 'rejected'
+            $booking->update(['status' => 'rejected']);
+
+            // Catat aksi penolakan ke dalam tabel log approvals
+            \App\Models\Approval::create([
+                'booking_id' => $booking->id,
+                'approver_id' => $user->id,
+                'level' => $level,
+                'status' => 'rejected', // Simpan status rejected di log
+            ]);
+
+            return back()->with('success', 'Pengajuan pemesanan kendaraan berhasil ditolak.');
+        }
+
+        return back()->with('error', 'Anda tidak memiliki otoritas untuk menolak pengajuan pada tahap ini.');
+    }
+
+    public function cancel($id)
+    {
+        $booking = Booking::findOrFail($id);
+        $user = Auth::user();
+
+        // LOGIKA 1: Pembatalan oleh Approver 1
+        if ($user->id == $booking->approver_1_id) {
+            // Approver 1 hanya bisa membatalkan jika status saat ini 'approved_lvl_1' 
+            // (Artinya Approver 2 BELUM melakukan tindakan approve)
+            if ($booking->status == 'approved_lvl_1') {
+                $booking->update(['status' => 'pending']);
+
+                // Hapus data log approval milik approver 1 untuk booking ini
+                Approval::where('booking_id', $booking->id)
+                    ->where('approver_id', $user->id)
+                    ->where('level', 1)
+                    ->delete();
+
+                return back()->with('success', 'Persetujuan Anda berhasil dibatalkan. Status kembali ke Pending.');
+            }
+
+            return back()->with('error', 'Tidak bisa membatalkan, Approver 2 sudah menyetujui pesanan ini.');
+        }
+
+        // LOGIKA 2: Pembatalan oleh Approver 2
+        if ($user->id == $booking->approver_2_id) {
+            // Approver 2 bisa membatalkan jika status sudah 'approved_final'
+            if ($booking->status == 'approved_final') {
+                $booking->update(['status' => 'approved_lvl_1']);
+
+                // Hapus data log approval milik approver 2 untuk booking ini
+                Approval::where('booking_id', $booking->id)
+                    ->where('approver_id', $user->id)
+                    ->where('level', 2)
+                    ->delete();
+
+                return back()->with('success', 'Persetujuan Final berhasil dibatalkan. Status kembali ke Level 1.');
+            }
+
+            return back()->with('error', 'Anda belum melakukan approval pada data ini.');
+        }
+
+        return back()->with('error', 'Anda tidak memiliki hak akses pembatalan.');
+    }
+
+    public function exportPeriodic()
+    {
+        $tahunSekarang = date('Y');
+
+        return Excel::download(
+            new PeriodicBookingExport, // 2. UBAH DI SINI: Hilangkan huruf 's' agar sesuai dengan pola PSR
+            'laporan-periodik-kendaraan-' . $tahunSekarang . '.xlsx'
+        );
     }
 }

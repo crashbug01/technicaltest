@@ -27,6 +27,57 @@
                         </div>
                     </div>
                     <!--end::Row-->
+                    <div class="card mb-4">
+                        <div class="card-header border-0">
+                            <div class="d-flex justify-content-between">
+                                <h3 class="card-title">Log Status Persetujuan Kendaraan</h3>
+                                <a href="{{ route('admin.booking.index') }}"
+                                    class="link-primary link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover">Lihat
+                                    Semua Data</a>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex">
+                                <p class="d-flex flex-column">
+                                    <!-- Menampilkan total akumulasi booking -->
+                                    <span class="fw-bold fs-5">{{ $totalPending + $totalApproved }} Pesanan</span>
+                                    <span>Total Distribusi Operasional</span>
+                                </p>
+                                <p class="ms-auto d-flex flex-column text-end">
+                                    <span class="text-warning">
+                                        <i class="bi bi-clock-history"></i> {{ $totalPending }} Pending
+                                    </span>
+                                    <span class="text-secondary">Butuh Tindakan Segera</span>
+                                </p>
+                            </div> <!-- /.d-flex -->
+
+                            <!-- Container Tempat Grafik Digambar -->
+                            <div class="position-relative mb-4">
+                                <canvas id="approval-status-chart"
+                                    style="min-height: 250px; height: 250px; max-height: 250px; max-width: 100%;"></canvas>
+                            </div>
+
+                            <!-- Legenda Custom Indikator Status -->
+                            <div class="d-flex flex-row justify-content-center gap-3">
+                                <span> <i class="bi bi-square-fill text-warning"></i> Pending </span>
+                                <span> <i class="bi bi-square-fill text-info"></i> Approved Lvl 1 </span>
+                                <span> <i class="bi bi-square-fill text-success"></i> Approved Final </span>
+                                <span> <i class="bi bi-square-fill text-danger"></i> Rejected </span>
+                            </div>
+                        </div>
+
+                    </div>
+                    <div class="d-flex gap-2">
+                        <!-- Tombol Export Biasa -->
+                        <a href="{{ route('admin.booking.export') }}" class="btn btn-sm btn-success">
+                            <i class="fas fa-file-excel"></i> Export Semua Data
+                        </a>
+
+                        <!-- Tombol Export Berkala Bulanan Baru -->
+                        <a href="{{ route('admin.booking.export_periodic') }}" class="btn btn-sm btn-primary">
+                            <i class="fas fa-calendar-alt"></i> Export Laporan Periodik (Bulanan)
+                        </a>
+                    </div>
                 </div>
                 <!--end::Container-->
             </div>
@@ -110,62 +161,53 @@
         integrity="sha256-+vh8GkaU7C9/wbSLIcwq82tQ2wTf44aOHA8HlBMwRI8=" crossorigin="anonymous"></script>
     <!-- ChartJS -->
     <script>
-        // NOTICE!! DO NOT USE ANY OF THIS JAVASCRIPT
-        // IT'S ALL JUST JUNK FOR DEMO
-        // ++++++++++++++++++++++++++++++++++++++++++
+        document.addEventListener("DOMContentLoaded", function () {
+            // Mengambil data murni array angka dari controller [pending, approved_lvl_1, approved_final, rejected]
+            const approvalData = {!! $statusCounts ?? '[0, 0, 0, 0]' !!};
 
-        const sales_chart_options = {
-            series: [
-                {
-                    name: "Digital Goods",
-                    data: [28, 48, 40, 19, 86, 27, 90],
+            const ctxApproval = document.getElementById('approval-status-chart').getContext('2d');
+            new Chart(ctxApproval, {
+                type: 'bar', // Menggunakan grafik batang vertikal seperti template asli
+                data: {
+                    labels: ['Pending', 'Approved Lvl 1', 'Approved Final', 'Rejected'],
+                    datasets: [{
+                        label: 'Jumlah Request',
+                        data: approvalData,
+                        backgroundColor: [
+                            '#ffc107', // Kuning untuk Pending
+                            '#0dcaf0', // Biru Muda/Info untuk Approved Lvl 1
+                            '#198754', // Hijau untuk Approved Final
+                            '#dc3545'  // Merah untuk Rejected
+                        ],
+                        borderRadius: 4,
+                        barThickness: 40
+                    }]
                 },
-                {
-                    name: "Electronics",
-                    data: [65, 59, 80, 81, 56, 55, 40],
-                },
-            ],
-            chart: {
-                height: 300,
-                type: "area",
-                toolbar: {
-                    show: false,
-                },
-            },
-            legend: {
-                show: false,
-            },
-            colors: ["#0d6efd", "#20c997"],
-            dataLabels: {
-                enabled: false,
-            },
-            stroke: {
-                curve: "smooth",
-            },
-            xaxis: {
-                type: "datetime",
-                categories: [
-                    "2023-01-01",
-                    "2023-02-01",
-                    "2023-03-01",
-                    "2023-04-01",
-                    "2023-05-01",
-                    "2023-06-01",
-                    "2023-07-01",
-                ],
-            },
-            tooltip: {
-                x: {
-                    format: "MMMM yyyy",
-                },
-            },
-        };
-
-        const sales_chart = new ApexCharts(
-            document.querySelector("#revenue-chart"),
-            sales_chart_options,
-        );
-        sales_chart.render();
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false // Dimatikan karena kita sudah membuat komponen legenda custom HTML di bawah canvas
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1, // Memaksa grafik menggunakan angka bulat (bukan desimal)
+                                precision: 0
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false // Menghilangkan garis vertikal di latar belakang agar lebih clean
+                            }
+                        }
+                    }
+                }
+            });
+        });
     </script>
     <!-- jsvectormap -->
     <script src="https://cdn.jsdelivr.net/npm/jsvectormap@1.5.3/dist/js/jsvectormap.min.js"
@@ -173,120 +215,42 @@
     <script src="https://cdn.jsdelivr.net/npm/jsvectormap@1.5.3/dist/maps/world.js"
         integrity="sha256-XPpPaZlU8S/HWf7FZLAncLg2SAkP8ScUTII89x9D3lY=" crossorigin="anonymous"></script>
     <!-- jsvectormap -->
-    <script>
-        const visitorsData = {
-            US: 398, // USA
-            SA: 400, // Saudi Arabia
-            CA: 1000, // Canada
-            DE: 500, // Germany
-            FR: 760, // France
-            CN: 300, // China
-            AU: 700, // Australia
-            BR: 600, // Brazil
-            IN: 800, // India
-            GB: 320, // Great Britain
-            RU: 3000, // Russia
-        };
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-        // World map by jsVectorMap
-        const map = new jsVectorMap({
-            selector: "#world-map",
-            map: "world",
+    <script>
+        // 1. Render Grafik Tren Bulanan
+        const ctxMonthly = document.getElementById('monthlyChart').getContext('2d');
+        new Chart(ctxMonthly, {
+            type: 'line', // Grafik garis cocok untuk melihat tren dari bulan ke bulan
+            data: {
+                labels: {!! json_encode($labels) !!},
+                datasets: [{
+                    label: 'Jumlah Pesanan Masuk',
+                    data: {!! json_encode($values) !!},
+                    borderColor: '#4e73df',
+                    tension: 0.3
+                }]
+            }
         });
 
-        // Sparkline charts
-        const option_sparkline1 = {
-            series: [
-                {
-                    data: [1000, 1200, 920, 927, 931, 1027, 819, 930, 1021],
-                },
-            ],
-            chart: {
-                type: "area",
-                height: 50,
-                sparkline: {
-                    enabled: true,
-                },
+        // 2. Render Grafik Pemakaian Kendaraan (Bar Chart)
+        const ctxVehicle = document.getElementById('vehicleUsageChart').getContext('2d');
+        new Chart(ctxVehicle, {
+            type: 'bar', // Grafik Batang
+            data: {
+                labels: {!! $vehicleLabels !!}, // Membaca data JSON langsung
+                datasets: [{
+                    label: 'Frekuensi Digunakan (Approved)',
+                    data: {!! $vehicleValues !!},
+                    backgroundColor: '#1cc88a'
+                }]
             },
-            stroke: {
-                curve: "straight",
-            },
-            fill: {
-                opacity: 0.3,
-            },
-            yaxis: {
-                min: 0,
-            },
-            colors: ["#DCE6EC"],
-        };
-
-        const sparkline1 = new ApexCharts(
-            document.querySelector("#sparkline-1"),
-            option_sparkline1,
-        );
-        sparkline1.render();
-
-        const option_sparkline2 = {
-            series: [
-                {
-                    data: [515, 519, 520, 522, 652, 810, 370, 627, 319, 630, 921],
-                },
-            ],
-            chart: {
-                type: "area",
-                height: 50,
-                sparkline: {
-                    enabled: true,
-                },
-            },
-            stroke: {
-                curve: "straight",
-            },
-            fill: {
-                opacity: 0.3,
-            },
-            yaxis: {
-                min: 0,
-            },
-            colors: ["#DCE6EC"],
-        };
-
-        const sparkline2 = new ApexCharts(
-            document.querySelector("#sparkline-2"),
-            option_sparkline2,
-        );
-        sparkline2.render();
-
-        const option_sparkline3 = {
-            series: [
-                {
-                    data: [15, 19, 20, 22, 33, 27, 31, 27, 19, 30, 21],
-                },
-            ],
-            chart: {
-                type: "area",
-                height: 50,
-                sparkline: {
-                    enabled: true,
-                },
-            },
-            stroke: {
-                curve: "straight",
-            },
-            fill: {
-                opacity: 0.3,
-            },
-            yaxis: {
-                min: 0,
-            },
-            colors: ["#DCE6EC"],
-        };
-
-        const sparkline3 = new ApexCharts(
-            document.querySelector("#sparkline-3"),
-            option_sparkline3,
-        );
-        sparkline3.render();
+            options: {
+                scales: {
+                    y: { beginAtZero: true, ticks: { stepSize: 1 } }
+                }
+            }
+        });
     </script>
     <!--end::Script-->
 </body>

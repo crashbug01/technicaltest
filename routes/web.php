@@ -18,35 +18,35 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-    // ============================================================
-    // GRUP KHUSUS ADMIN (Menggunakan awalan admin/)
-    // ============================================================
+
     Route::middleware(['role:admin'])->prefix('admin')->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'adminIndex'])->name('admin.dashboard');
 
         Route::resource('vehicle', VehicleController::class);
 
-        // KEMBALIKAN INDEX DI SINI: Sekarang URL-nya menjadi GET admin/bookings
-        // Dan nama routenya otomatis menjadi admin.bookings.index
+        Route::get('export/booking', [BookingController::class, 'exportExcel'])->name('admin.booking.export');
+
+        Route::get('booking/export-periodic', [BookingController::class, 'exportPeriodic'])->name('admin.booking.export_periodic');
+
         Route::resource('booking', BookingController::class)->names([
             'index' => 'admin.booking.index',
             'create' => 'admin.booking.create',
             'store' => 'admin.booking.store',
+            'destroy' => 'admin.booking.destroy',
         ]);
 
-        Route::get('export/bookings', [BookingController::class, 'exportExcel'])->name('bookings.export');
+
     });
 
-    // ============================================================
-    // GRUP KHUSUS APPROVER (Menggunakan awalan approver/)
-    // ============================================================
+
     Route::middleware(['role:approver'])->prefix('approver')->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'approverIndex'])->name('approver.dashboard');
 
-        // TAMBAHKAN ROUTE INDEX DI SINI: URL menjadi GET approver/bookings
-        Route::get('/booking', [BookingController::class, 'approverIndexList'])->name('approver.bookings.index');
 
-        Route::post('/booking/{id}/approve', [BookingController::class, 'approve'])->name('bookings.approve');
-        Route::post('/booking/{id}/reject', [BookingController::class, 'reject'])->name('bookings.reject');
+        Route::get('/booking', [BookingController::class, 'approverIndexList'])->name('approver.booking.index');
+
+        Route::post('/booking/{id}/approve', [BookingController::class, 'approve'])->name('approver.booking.approve');
+        Route::post('/booking/{id}/reject', [BookingController::class, 'reject'])->name('approver.booking.reject');
+        Route::post('/booking/{id}/cancel', [BookingController::class, 'cancel'])->name('approver.booking.cancel');
     });
 });

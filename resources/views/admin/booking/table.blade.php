@@ -103,15 +103,24 @@
                                             </td>
                                             <td class="text-center">
                                                 <!-- Tombol Hapus Menggunakan Form Terbuka Masif -->
-                                                <form action="{{ route('booking.destroy', $booking->id) }}" method="POST"
-                                                    onsubmit="return confirm('Apakah Anda yakin ingin menghapus data pesanan ini?')">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" class="btn btn-sm btn-danger"
-                                                        title="Hapus Booking">
-                                                        <i class="fas fa-trash"></i> Hapus
+                                                @if($booking->status == 'pending')
+                                                    <!-- Tombol Hapus Aktif jika masih pending -->
+                                                    <form action="{{ route('admin.booking.destroy', $booking->id) }}"
+                                                        method="POST" class="d-inline"
+                                                        onsubmit="return confirm('Yakin ingin menghapus data ini?')">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" class="btn btn-sm btn-danger">
+                                                            <i class="fas fa-trash"></i> Hapus
+                                                        </button>
+                                                    </form>
+                                                @else
+                                                    <!-- Tombol Hapus Dinonaktifkan/Dikunci jika sudah diproses -->
+                                                    <button class="btn btn-sm btn-secondary" disabled
+                                                        title="Tidak dapat dihapus karena sudah diproses">
+                                                        <i class="fas fa-lock"></i> Terkunci
                                                     </button>
-                                                </form>
+                                                @endif
                                             </td>
                                         </tr>
                                     @empty
