@@ -32,6 +32,12 @@
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a href="/admin/driver" class="nav-link">
+                        <i class="nav-icon bi bi-table"></i>
+                        <p>Driver</p>
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a href="/admin/booking" class="nav-link">
                         <i class="nav-icon bi bi-pencil-square"></i>
                         <p>Booking</p>

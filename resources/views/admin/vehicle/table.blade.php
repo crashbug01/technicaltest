@@ -37,7 +37,7 @@
                 <div class="container-fluid">
                     <div class="card">
                         <div class="card-header d-flex justify-content-between align-items-center">
-                            <h3 class="card-title">Daftar Kendaraan & Jadwal Service</h3>
+                            <h3 class="card-title">Daftar Kendaraan</h3>
                             <!-- Opsional: Tambahkan tombol tambah data jika diperlukan -->
                             <a href="{{ route('vehicle.create') }}" class="btn btn-sm btn-primary ms-auto">
                                 <i class="fas fa-plus"></i> Tambah Kendaraan

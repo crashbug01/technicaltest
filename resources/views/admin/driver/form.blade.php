@@ -23,7 +23,15 @@
                     <!--begin::Row-->
                     <div class="row">
                         <div class="col-sm-6">
-                            <h3 class="mb-0">Persetujuan</h3>
+                            <h3 class="mb-0">Dashboard</h3>
+                        </div>
+                        <div class="col-sm-6">
+                            <ol class="breadcrumb float-sm-end">
+                                <li class="breadcrumb-item"><a href="#">Home</a></li>
+                                <li class="breadcrumb-item active" aria-current="page">
+                                    Dashboard
+                                </li>
+                            </ol>
                         </div>
                     </div>
                     <!--end::Row-->
@@ -35,113 +43,62 @@
             <div class="app-content">
                 <!--begin::Container-->
                 <div class="container-fluid">
-                    <div class="card mb-4">
-                        <div class="card-header d-flex justify-content-between align-items-center">
-                            <h3 class="card-title">Daftar Persetujuan Kendaraan (Admin)</h3>
-                            <a href="{{ route('admin.booking.create') }}"
-                                class="btn btn-primary btn-sm float-end ms-auto">
-                                <i class="fas fa-plus"></i> Tambah Pesanan
-                            </a>
-                        </div> <!-- /.card-header -->
-
-                        <div class="card-body">
-                            <!-- Notifikasi Sukses -->
-                            @if(session('success'))
-                                <div class="alert alert-success alert-dismissible fade show" role="alert">
-                                    {{ session('success') }}
-                                    <button type="button" class="btn-close" data-bs-dismiss="alert"
-                                        aria-label="Close"></button>
-                                </div>
-                            @endif
-
-                            <table class="table table-bordered">
-                                <thead>
-                                    <tr>
-                                        <th style="width: 10px">#</th>
-                                        <th>Kendaraan</th>
-                                        <th>Driver</th>
-                                        <th>Tanggal Pinjam</th>
-                                        <th>Approver 1</th>
-                                        <th>Approver 2</th>
-                                        <th>Status Alur</th>
-                                        <th style="width: 100px; text-align: center;">Aksi</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @forelse($bookings as $index => $booking)
-                                        <tr class="align-middle">
-                                            <td>{{ $index + 1 }}.</td>
-                                            <td>
-                                                <strong>{{ $booking->vehicle->name ?? 'N/A' }}</strong>
-                                                <br><small
-                                                    class="text-muted">{{ $booking->vehicle->plate_number ?? '' }}</small>
-                                            </td>
-                                            <td>{{ $booking->driver->name ?? 'N/A' }}</td>
-                                            <td>
-                                                <small>
-                                                    <strong>Mulai:</strong>
-                                                    {{ \Carbon\Carbon::parse($booking->start_date)->format('d M Y') }}<br>
-                                                    <strong>Selesai:</strong>
-                                                    {{ \Carbon\Carbon::parse($booking->end_date)->format('d M Y') }}
-                                                </small>
-                                            </td>
-                                            <td><span
-                                                    class="text-secondary">{{ $booking->approver1->name ?? 'Tidak Ditemukan' }}</span>
-                                            </td>
-                                            <td><span
-                                                    class="text-secondary">{{ $booking->approver2->name ?? 'Tidak Ditemukan' }}</span>
-                                            </td>
-                                            <td>
-                                                @if($booking->status == 'pending')
-                                                    <span class="badge text-bg-warning">Menunggu Atasan 1</span>
-                                                @elseif($booking->status == 'approved_lvl_1')
-                                                    <span class="badge text-bg-primary">Disetujui Atasan 1</span>
-                                                @elseif($booking->status == 'approved_final')
-                                                    <span class="badge text-bg-success">Selesai (Approved)</span>
-                                                @else
-                                                    <span class="badge text-bg-danger">Ditolak</span>
-                                                @endif
-                                            </td>
-                                            <td class="text-center">
-                                                <!-- Tombol Hapus Menggunakan Form Terbuka Masif -->
-                                                @if($booking->status == 'pending')
-                                                    <!-- Tombol Hapus Aktif jika masih pending -->
-                                                    <form action="{{ route('admin.booking.destroy', $booking->id) }}"
-                                                        method="POST" class="d-inline"
-                                                        onsubmit="return confirm('Yakin ingin menghapus data ini?')">
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        <button type="submit" class="btn btn-sm btn-danger">
-                                                            <i class="fas fa-trash"></i> Hapus
-                                                        </button>
-                                                    </form>
-                                                @else
-                                                    <!-- Tombol Hapus Dinonaktifkan/Dikunci jika sudah diproses -->
-                                                    <button class="btn btn-sm btn-secondary" disabled
-                                                        title="Tidak dapat dihapus karena sudah diproses">
-                                                        <i class="fas fa-lock"></i> Terkunci
-                                                    </button>
-                                                @endif
-                                            </td>
-                                        </tr>
-                                    @empty
-                                        <tr>
-                                            <td colspan="8" class="text-center text-muted">Belum ada data pemesanan
-                                                kendaraan.</td>
-                                        </tr>
-                                    @endforelse
-                                </tbody>
-                            </table>
-                        </div> <!-- /.card-body -->
-
-                        <div class="card-footer clearfix">
-                            <ul class="pagination pagination-sm m-0 float-end">
-                                <li class="page-item"> <a class="page-link" href="#">&laquo;</a> </li>
-                                <li class="page-item active"> <a class="page-link" href="#">1</a> </li>
-                                <li class="page-item"> <a class="page-link" href="#">&raquo;</a> </li>
-                            </ul>
+                    <div class="card card-outline mb-4"> <!--begin::Header-->
+                        <div class="card-header">
+                            <h3 class="card-title">Tambah Pengemudi Baru</h3>
                         </div>
-                    </div> <!-- /.card -->
+
+                        <!-- URL diarahkan ke route resource admin.driver.store -->
+                        <form action="{{ route('admin.driver.store') }}" method="POST">
+                            @csrf <!-- Wajib untuk keamanan token Laravel -->
+
+                            <!--begin::Body-->
+                            <div class="card-body">
+
+                                <!-- Nama Pengemudi -->
+                                <div class="row mb-3">
+                                    <label for="name" class="col-sm-2 col-form-label">Nama Lengkap</label>
+                                    <div class="col-sm-10">
+                                        <input type="text" class="form-control @error('name') is-invalid @enderror"
+                                            id="name" name="name" value="{{ old('name') }}"
+                                            placeholder="Contoh: Ahmad Subarjo" required>
+                                        @error('name')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                </div>
+
+                                <!-- Nomor Telepon / WhatsApp -->
+                                <div class="row mb-3">
+                                    <label for="phone" class="col-sm-2 col-form-label">Nomor HP / WhatsApp</label>
+                                    <div class="col-sm-10">
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-phone"></i></span>
+                                            <input type="text" class="form-control @error('phone') is-invalid @enderror"
+                                                id="phone" name="phone" value="{{ old('phone') }}"
+                                                placeholder="Contoh: 081234567890" required>
+                                            @error('phone')
+                                                <div class="invalid-feedback">{{ $message }}</div>
+                                            @enderror
+                                        </div>
+                                        <small class="form-text text-muted">Pastikan nomor telepon aktif dan belum
+                                            pernah didaftarkan sebelumnya.</small>
+                                    </div>
+                                </div>
+
+                            </div>
+                            <!--end::Body-->
+
+                            <!--begin::Footer-->
+                            <div class="card-footer">
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-save"></i> Simpan Pengemudi
+                                </button>
+                                <a href="{{ route('admin.driver.index') }}" class="btn btn-secondary">Batal</a>
+                            </div>
+                            <!--end::Footer-->
+                        </form>
+                    </div> <!--end::Horizontal Form-->
                 </div>
                 <!--end::Container-->
             </div>

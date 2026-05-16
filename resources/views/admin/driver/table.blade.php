@@ -23,7 +23,7 @@
                     <!--begin::Row-->
                     <div class="row">
                         <div class="col-sm-6">
-                            <h3 class="mb-0">Persetujuan</h3>
+                            <h3 class="mb-0">Driver</h3>
                         </div>
                     </div>
                     <!--end::Row-->
@@ -35,99 +35,69 @@
             <div class="app-content">
                 <!--begin::Container-->
                 <div class="container-fluid">
-                    <div class="card mb-4">
+                    <div class="card">
                         <div class="card-header d-flex justify-content-between align-items-center">
-                            <h3 class="card-title">Daftar Persetujuan Kendaraan (Admin)</h3>
-                            <a href="{{ route('admin.booking.create') }}"
-                                class="btn btn-primary btn-sm float-end ms-auto">
-                                <i class="fas fa-plus"></i> Tambah Pesanan
+                            <h3 class="card-title">Daftar Driver</h3>
+                            <!-- Opsional: Tambahkan tombol tambah data jika diperlukan -->
+                            <a href="{{ route('admin.driver.create') }}" class="btn btn-sm btn-primary ms-auto">
+                                <i class="fas fa-plus"></i> Tambah Kendaraan
                             </a>
                         </div> <!-- /.card-header -->
 
                         <div class="card-body">
-                            <!-- Notifikasi Sukses -->
-                            @if(session('success'))
-                                <div class="alert alert-success alert-dismissible fade show" role="alert">
-                                    {{ session('success') }}
-                                    <button type="button" class="btn-close" data-bs-dismiss="alert"
-                                        aria-label="Close"></button>
-                                </div>
-                            @endif
-
-                            <table class="table table-bordered">
+                            <table class="table table-bordered table-striped">
                                 <thead>
                                     <tr>
                                         <th style="width: 10px">#</th>
-                                        <th>Kendaraan</th>
-                                        <th>Driver</th>
-                                        <th>Tanggal Pinjam</th>
-                                        <th>Approver 1</th>
-                                        <th>Approver 2</th>
-                                        <th>Status Alur</th>
-                                        <th style="width: 100px; text-align: center;">Aksi</th>
+                                        <th>Nama Pengemudi</th>
+                                        <th>Nomor Telepon / WA</th>
+                                        <th>Total Menangani Pesanan</th>
+                                        <th style="width: 150px" class="text-center">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @forelse($bookings as $index => $booking)
+                                    @forelse($drivers as $index => $driver)
                                         <tr class="align-middle">
                                             <td>{{ $index + 1 }}.</td>
+                                            <td><strong>{{ $driver->name }}</strong></td>
                                             <td>
-                                                <strong>{{ $booking->vehicle->name ?? 'N/A' }}</strong>
-                                                <br><small
-                                                    class="text-muted">{{ $booking->vehicle->plate_number ?? '' }}</small>
-                                            </td>
-                                            <td>{{ $booking->driver->name ?? 'N/A' }}</td>
-                                            <td>
-                                                <small>
-                                                    <strong>Mulai:</strong>
-                                                    {{ \Carbon\Carbon::parse($booking->start_date)->format('d M Y') }}<br>
-                                                    <strong>Selesai:</strong>
-                                                    {{ \Carbon\Carbon::parse($booking->end_date)->format('d M Y') }}
-                                                </small>
-                                            </td>
-                                            <td><span
-                                                    class="text-secondary">{{ $booking->approver1->name ?? 'Tidak Ditemukan' }}</span>
-                                            </td>
-                                            <td><span
-                                                    class="text-secondary">{{ $booking->approver2->name ?? 'Tidak Ditemukan' }}</span>
+                                                <span class="badge text-bg-light border">
+                                                    <i class="fab fa-whatsapp text-success me-1"></i> {{ $driver->phone }}
+                                                </span>
                                             </td>
                                             <td>
-                                                @if($booking->status == 'pending')
-                                                    <span class="badge text-bg-warning">Menunggu Atasan 1</span>
-                                                @elseif($booking->status == 'approved_lvl_1')
-                                                    <span class="badge text-bg-primary">Disetujui Atasan 1</span>
-                                                @elseif($booking->status == 'approved_final')
-                                                    <span class="badge text-bg-success">Selesai (Approved)</span>
-                                                @else
-                                                    <span class="badge text-bg-danger">Ditolak</span>
-                                                @endif
+                                                <!-- Menggunakan relasi bookings() untuk menghitung jumlah tugas -->
+                                                <span class="badge text-bg-secondary">
+                                                    {{ $driver->bookings_count ?? $driver->bookings->count() }} Kali Tugas
+                                                </span>
                                             </td>
                                             <td class="text-center">
-                                                <!-- Tombol Hapus Menggunakan Form Terbuka Masif -->
-                                                @if($booking->status == 'pending')
-                                                    <!-- Tombol Hapus Aktif jika masih pending -->
-                                                    <form action="{{ route('admin.booking.destroy', $booking->id) }}"
-                                                        method="POST" class="d-inline"
-                                                        onsubmit="return confirm('Yakin ingin menghapus data ini?')">
+                                                <div class="d-flex justify-content-center gap-2">
+                                                    <!-- Tombol Edit Driver -->
+                                                    <a href="{{ route('admin.driver.edit', $driver->id) }}"
+                                                        class="btn btn-sm btn-warning">
+                                                        <i class="fas fa-edit"></i> Edit
+                                                    </a>
+
+                                                    <!-- Form & Tombol Delete Driver -->
+                                                    <form action="{{ route('admin.driver.destroy', $driver->id) }}"
+                                                        method="POST"
+                                                        onsubmit="return confirm('Apakah Anda yakin ingin menghapus pengemudi ini?');">
                                                         @csrf
                                                         @method('DELETE')
                                                         <button type="submit" class="btn btn-sm btn-danger">
                                                             <i class="fas fa-trash"></i> Hapus
                                                         </button>
                                                     </form>
-                                                @else
-                                                    <!-- Tombol Hapus Dinonaktifkan/Dikunci jika sudah diproses -->
-                                                    <button class="btn btn-sm btn-secondary" disabled
-                                                        title="Tidak dapat dihapus karena sudah diproses">
-                                                        <i class="fas fa-lock"></i> Terkunci
-                                                    </button>
-                                                @endif
+                                                </div>
                                             </td>
                                         </tr>
                                     @empty
-                                        <tr>
-                                            <td colspan="8" class="text-center text-muted">Belum ada data pemesanan
-                                                kendaraan.</td>
+                                        <tr class="text-center">
+                                            <td colspan="5" class="text-muted py-4">
+                                                <i class="fas fa-users-slash fa-2x mb-2 d-block"></i>
+                                                Belum ada data pengemudi yang terdaftar.
+                                            </td>
                                         </tr>
                                     @endforelse
                                 </tbody>
@@ -135,11 +105,12 @@
                         </div> <!-- /.card-body -->
 
                         <div class="card-footer clearfix">
-                            <ul class="pagination pagination-sm m-0 float-end">
-                                <li class="page-item"> <a class="page-link" href="#">&laquo;</a> </li>
-                                <li class="page-item active"> <a class="page-link" href="#">1</a> </li>
-                                <li class="page-item"> <a class="page-link" href="#">&raquo;</a> </li>
-                            </ul>
+                            <!-- Jika Anda menggunakan pagination di controller (misal: Vehicle::paginate(10)) -->
+                            @if(method_exists($driver, 'links'))
+                                <div class="float-end">
+                                    {{ $driver->links() }}
+                                </div>
+                            @endif
                         </div>
                     </div> <!-- /.card -->
                 </div>

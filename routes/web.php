@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\VehicleController;
+use App\Http\Controllers\DriverController;
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -23,6 +24,15 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'adminIndex'])->name('admin.dashboard');
 
         Route::resource('vehicle', VehicleController::class);
+
+        Route::resource('driver', DriverController::class)->names([
+            'index' => 'admin.driver.index',
+            'create' => 'admin.driver.create',
+            'store' => 'admin.driver.store',
+            'edit' => 'admin.driver.edit',
+            'update' => 'admin.driver.update',
+            'destroy' => 'admin.driver.destroy',
+        ]);
 
         Route::get('export/booking', [BookingController::class, 'exportExcel'])->name('admin.booking.export');
 
