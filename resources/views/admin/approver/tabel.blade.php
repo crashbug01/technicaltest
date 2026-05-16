@@ -37,10 +37,10 @@
                 <div class="container-fluid">
                     <div class="card">
                         <div class="card-header d-flex justify-content-between align-items-center">
-                            <h3 class="card-title">Daftar Driver</h3>
-                            <!-- Opsional: Tambahkan tombol tambah data jika diperlukan -->
-                            <a href="{{ route('admin.driver.create') }}" class="btn btn-sm btn-primary ms-auto">
-                                <i class="fas fa-plus"></i> Tambah Kendaraan
+                            <h3 class="card-title">Daftar Akun Approver</h3>
+                            <!-- Tombol tambah data diarahkan ke form create approver -->
+                            <a href="{{ route('admin.approver.create') }}" class="btn btn-sm btn-primary ms-auto">
+                                <i class="fas fa-plus"></i> Tambah Approver
                             </a>
                         </div> <!-- /.card-header -->
 
@@ -49,54 +49,83 @@
                                 <thead>
                                     <tr>
                                         <th style="width: 10px">#</th>
-                                        <th>Nama Pengemudi</th>
-                                        <th>Nomor Telepon / WA</th>
-                                        <th>Total Menangani Pesanan</th>
-                                        <th style="width: 150px" class="text-center">Aksi</th>
+                                        <th>Nama Approver</th>
+                                        <th>Alamat Email</th>
+                                        <th>Verifikasi Awal (Lvl 1)</th>
+                                        <th>Keputusan Akhir (Lvl 2)</th>
+                                        <th>Status</th>
+                                        <th style="width: 180px" class="text-center">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @forelse($drivers as $index => $driver)
+                                    @forelse($approvers as $index => $approver)
                                         <tr class="align-middle">
                                             <td>{{ $index + 1 }}.</td>
-                                            <td><strong>{{ $driver->name }}</strong></td>
+                                            <td><strong>{{ $approver->name }}</strong></td>
                                             <td>
-                                                <span class="badge text-bg-light border">
-                                                    <i class="fab fa-whatsapp text-success me-1"></i> {{ $driver->phone }}
+                                                <span class="text-secondary">
+                                                    <i class="fas fa-envelope me-1"></i> {{ $approver->email }}
                                                 </span>
                                             </td>
                                             <td>
-                                                <!-- Menggunakan relasi bookings() untuk menghitung jumlah tugas -->
-                                                <span class="badge text-bg-secondary">
-                                                    {{ $driver->bookings_count ?? $driver->bookings->count() }} Kali Tugas
+                                                <!-- Menghitung dokumen yang masuk ke Approver 1 -->
+                                                <span class="badge text-bg-info">
+                                                    {{ $approver->approvals_level1_count ?? $approver->approvalsLevel1->count() }}
+                                                    Dokumen
                                                 </span>
+                                            </td>
+                                            <td>
+                                                <!-- Menghitung dokumen yang masuk ke Approver 2 -->
+                                                <span class="badge text-bg-success">
+                                                    {{ $approver->approvals_level2_count ?? $approver->approvalsLevel2->count() }}
+                                                    Dokumen
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <!-- Deteksi Status Menggunakan Fitur Soft Deletes -->
+                                                @if($approver->trashed())
+                                                    <span class="badge text-bg-danger">Nonaktif</span>
+                                                @else
+                                                    <span class="badge text-bg-primary">Aktif</span>
+                                                @endif
                                             </td>
                                             <td class="text-center">
-                                                <div class="d-flex justify-content-center gap-2">
-                                                    <!-- Tombol Edit Driver -->
-                                                    <a href="{{ route('admin.driver.edit', $driver->id) }}"
-                                                        class="btn btn-sm btn-warning">
-                                                        <i class="fas fa-edit"></i> Edit
-                                                    </a>
-
-                                                    <!-- Form & Tombol Delete Driver -->
-                                                    <form action="{{ route('admin.driver.destroy', $driver->id) }}"
-                                                        method="POST"
-                                                        onsubmit="return confirm('Apakah Anda yakin ingin menghapus pengemudi ini?');">
+                                                @if($approver->trashed())
+                                                    <!-- Kondisi 1: Jika Akun Nonaktif, Beri Tombol Restore -->
+                                                    <form action="{{ route('admin.approver.restore', $approver->id) }}"
+                                                        method="POST" class="d-inline">
                                                         @csrf
-                                                        @method('DELETE')
-                                                        <button type="submit" class="btn btn-sm btn-danger">
-                                                            <i class="fas fa-trash"></i> Hapus
+                                                        <button type="submit" class="btn btn-sm btn-success"
+                                                            onclick="return confirm('Apakah Anda yakin ingin mengaktifkan kembali akun approver ini?');">
+                                                            <i class="fas fa-user-check"></i> Aktifkan Akun
                                                         </button>
                                                     </form>
-                                                </div>
+                                                @else
+                                                    <!-- Kondisi 2: Jika Akun Aktif, Beri Akses Edit dan Nonaktifkan (Delete) -->
+                                                    <div class="d-flex justify-content-center gap-2">
+                                                        <a href="{{ route('admin.approver.edit', $approver->id) }}"
+                                                            class="btn btn-sm btn-warning">
+                                                            <i class="fas fa-edit"></i> Edit
+                                                        </a>
+
+                                                        <form action="{{ route('admin.approver.destroy', $approver->id) }}"
+                                                            method="POST"
+                                                            onsubmit="return confirm('Apakah Anda yakin ingin menonaktifkan akun approver ini? (Riwayat pengajuan lama akan tetap aman)');">
+                                                            @csrf
+                                                            @method('DELETE')
+                                                            <button type="submit" class="btn btn-sm btn-danger">
+                                                                <i class="fas fa-user-slash"></i> Nonaktifkan
+                                                            </button>
+                                                        </form>
+                                                    </div>
+                                                @endif
                                             </td>
                                         </tr>
                                     @empty
                                         <tr class="text-center">
-                                            <td colspan="5" class="text-muted py-4">
-                                                <i class="fas fa-users-slash fa-2x mb-2 d-block"></i>
-                                                Belum ada data pengemudi yang terdaftar.
+                                            <td colspan="7" class="text-muted py-4">
+                                                <i class="fas fa-user-slash fa-2x mb-2 d-block"></i>
+                                                Belum ada data user dengan role approver yang terdaftar.
                                             </td>
                                         </tr>
                                     @endforelse
@@ -105,10 +134,10 @@
                         </div> <!-- /.card-body -->
 
                         <div class="card-footer clearfix">
-                            <!-- Jika Anda menggunakan pagination di controller (misal: Vehicle::paginate(10)) -->
-                            @if(method_exists($driver, 'links'))
+                            <!-- Paginasi dinamis mendeteksi koleksi data di $approvers -->
+                            @if(method_exists($approvers, 'links'))
                                 <div class="float-end">
-                                    {{ $driver->links() }}
+                                    {{ $approvers->links() }}
                                 </div>
                             @endif
                         </div>

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\User;
 
 class UserController extends Controller
 {
@@ -18,7 +19,7 @@ class UserController extends Controller
             ->latest()
             ->get();
 
-        return view('admin.approver.index', compact('approvers'));
+        return view('admin.approver.tabel', compact('approvers'));
     }
 
     /**
