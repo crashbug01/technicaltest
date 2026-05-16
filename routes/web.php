@@ -34,10 +34,15 @@ Route::middleware(['auth'])->group(function () {
             'destroy' => 'admin.driver.destroy',
         ]);
 
+        Route::post('approver/{id}/restore', [UserController::class, 'restore'])->name('admin.approver.restore');
+
         Route::resource('approver', UserController::class)->names([
             'index' => 'admin.approver.index',
             'create' => 'admin.approver.create',
             'store' => 'admin.approver.store',
+            'edit' => 'admin.approver.edit',
+            'update' => 'admin.approver.update',
+            'destroy' => 'admin.approver.destroy',
         ]);
 
         Route::get('export/booking', [BookingController::class, 'exportExcel'])->name('admin.booking.export');

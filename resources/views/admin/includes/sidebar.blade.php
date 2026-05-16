@@ -26,6 +26,12 @@
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a href="/admin/approver" class="nav-link">
+                        <i class="nav-icon bi bi-table"></i>
+                        <p>Approver</p>
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a href="/admin/vehicle" class="nav-link">
                         <i class="nav-icon bi bi-table"></i>
                         <p>Kendaraan</p>
