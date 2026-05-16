@@ -41,6 +41,8 @@ Ikuti langkah-langkah di bawah ini untuk menjalankan aplikasi di komputer lokal 
     ```
 
 3. **Konfigurasi File .env**
+
+```
    APP_NAME=Laravel
    APP_ENV=local
    APP_KEY=base64:am7NNN1kG1Or/YYX9U0Nx6x/b8WKGPX+LcZUzFNWNJg=
@@ -53,7 +55,9 @@ Ikuti langkah-langkah di bawah ini untuk menjalankan aplikasi di komputer lokal 
     DB_DATABASE=technicaltest
     DB_USERNAME=root
     DB_PASSWORD=
-    \_Catatan: Buat database kosong bernama `technicaltest` di phpMyAdmin sebelum lanjut ke langkah berikutnya.*
+```
+
+\_Catatan: Buat database kosong bernama `technicaltest` di phpMyAdmin sebelum lanjut ke langkah berikutnya.\*
 
 4. **Migrasi Struktur & Data Awa (Seeder)**
    Jalankan perintah ini untuk membuat seluruh tabel sistem beserta akun default di atas secara otomatis:
