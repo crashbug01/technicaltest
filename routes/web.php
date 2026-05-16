@@ -34,6 +34,12 @@ Route::middleware(['auth'])->group(function () {
             'destroy' => 'admin.driver.destroy',
         ]);
 
+        Route::resource('approver', UserController::class)->names([
+            'index' => 'admin.approver.index',
+            'create' => 'admin.approver.create',
+            'store' => 'admin.approver.store',
+        ]);
+
         Route::get('export/booking', [BookingController::class, 'exportExcel'])->name('admin.booking.export');
 
         Route::get('booking/export-periodic', [BookingController::class, 'exportPeriodic'])->name('admin.booking.export_periodic');
