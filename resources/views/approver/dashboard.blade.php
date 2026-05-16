@@ -25,15 +25,46 @@
                         <div class="col-sm-6">
                             <h3 class="mb-0">Dashboard</h3>
                         </div>
-                        <div class="col-sm-6">
-                            <ol class="breadcrumb float-sm-end">
-                                <li class="breadcrumb-item"><a href="#">Home</a></li>
-                                <li class="breadcrumb-item active" aria-current="page">
-                                    Dashboard
-                                </li>
-                            </ol>
-                        </div>
+
                     </div>
+                    <div class="card mb-4">
+                        <div class="card-header border-0">
+                            <div class="d-flex justify-content-between">
+                                <h3 class="card-title">Ringkasan Riwayat Persetujuan Saya</h3>
+                                <a href="{{ route('approver.booking.index') }}"
+                                    class="link-primary link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover">Lihat
+                                    Semua Tugas</a>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex">
+                                <p class="d-flex flex-column">
+                                    <span class="fw-bold fs-5">{{ $totalHistory }} Transaksi</span>
+                                    <span>Total Menangani Dokumen</span>
+                                </p>
+                                <p class="ms-auto d-flex flex-column text-end">
+                                    <span class="text-warning fw-bold">
+                                        <i class="bi bi-bell-fill"></i> {{ $myPending }} Butuh Aksi
+                                    </span>
+                                    <span class="text-secondary">Menunggu Tindakan Anda</span>
+                                </p>
+                            </div> <!-- /.d-flex -->
+
+                            <!-- Container Tempat Grafik -->
+                            <div class="position-relative mb-4">
+                                <canvas id="approver-status-chart"
+                                    style="min-height: 250px; height: 250px; max-height: 250px; max-width: 100%;"></canvas>
+                            </div>
+
+                            <!-- Legenda Indikator Warna Status -->
+                            <div class="d-flex flex-row justify-content-center gap-3">
+                                <span><i class="bi bi-square-fill text-warning"></i> Pending</span>
+                                <span><i class="bi bi-square-fill text-info"></i> Approved Lvl 1</span>
+                                <span><i class="bi bi-square-fill text-success"></i> Approved Final</span>
+                                <span><i class="bi bi-square-fill text-danger"></i> Rejected</span>
+                            </div>
+                        </div>
+                    </div> <!-- /.card -->
                     <!--end::Row-->
                 </div>
                 <!--end::Container-->
@@ -182,120 +213,46 @@
     <script src="https://cdn.jsdelivr.net/npm/jsvectormap@1.5.3/dist/maps/world.js"
         integrity="sha256-XPpPaZlU8S/HWf7FZLAncLg2SAkP8ScUTII89x9D3lY=" crossorigin="anonymous"></script>
     <!-- jsvectormap -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        const visitorsData = {
-            US: 398, // USA
-            SA: 400, // Saudi Arabia
-            CA: 1000, // Canada
-            DE: 500, // Germany
-            FR: 760, // France
-            CN: 300, // China
-            AU: 700, // Australia
-            BR: 600, // Brazil
-            IN: 800, // India
-            GB: 320, // Great Britain
-            RU: 3000, // Russia
-        };
+        document.addEventListener("DOMContentLoaded", function () {
+            // Mengambil data murni array angka khusus milik approver ini [pending, lvl1, final, rejected]
+            const approverChartData = {!! $approverCounts ?? '[0, 0, 0, 0]' !!};
 
-        // World map by jsVectorMap
-        const map = new jsVectorMap({
-            selector: "#world-map",
-            map: "world",
+            const ctxApprover = document.getElementById('approver-status-chart').getContext('2d');
+            new Chart(ctxApprover, {
+                type: 'bar',
+                data: {
+                    labels: ['Pending', 'Approved Lvl 1', 'Approved Final', 'Rejected'],
+                    datasets: [{
+                        label: 'Jumlah Request Terlibat',
+                        data: approverChartData,
+                        backgroundColor: [
+                            '#ffc107', // Kuning -> Pending
+                            '#0dcaf0', // Biru Muda -> Approved Lvl 1
+                            '#198754', // Hijau -> Approved Final
+                            '#dc3545'  // Merah -> Rejected
+                        ],
+                        borderRadius: 4,
+                        barThickness: 45
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false } // Menggunakan legend custom HTML di atas
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { stepSize: 1, precision: 0 }
+                        },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
         });
-
-        // Sparkline charts
-        const option_sparkline1 = {
-            series: [
-                {
-                    data: [1000, 1200, 920, 927, 931, 1027, 819, 930, 1021],
-                },
-            ],
-            chart: {
-                type: "area",
-                height: 50,
-                sparkline: {
-                    enabled: true,
-                },
-            },
-            stroke: {
-                curve: "straight",
-            },
-            fill: {
-                opacity: 0.3,
-            },
-            yaxis: {
-                min: 0,
-            },
-            colors: ["#DCE6EC"],
-        };
-
-        const sparkline1 = new ApexCharts(
-            document.querySelector("#sparkline-1"),
-            option_sparkline1,
-        );
-        sparkline1.render();
-
-        const option_sparkline2 = {
-            series: [
-                {
-                    data: [515, 519, 520, 522, 652, 810, 370, 627, 319, 630, 921],
-                },
-            ],
-            chart: {
-                type: "area",
-                height: 50,
-                sparkline: {
-                    enabled: true,
-                },
-            },
-            stroke: {
-                curve: "straight",
-            },
-            fill: {
-                opacity: 0.3,
-            },
-            yaxis: {
-                min: 0,
-            },
-            colors: ["#DCE6EC"],
-        };
-
-        const sparkline2 = new ApexCharts(
-            document.querySelector("#sparkline-2"),
-            option_sparkline2,
-        );
-        sparkline2.render();
-
-        const option_sparkline3 = {
-            series: [
-                {
-                    data: [15, 19, 20, 22, 33, 27, 31, 27, 19, 30, 21],
-                },
-            ],
-            chart: {
-                type: "area",
-                height: 50,
-                sparkline: {
-                    enabled: true,
-                },
-            },
-            stroke: {
-                curve: "straight",
-            },
-            fill: {
-                opacity: 0.3,
-            },
-            yaxis: {
-                min: 0,
-            },
-            colors: ["#DCE6EC"],
-        };
-
-        const sparkline3 = new ApexCharts(
-            document.querySelector("#sparkline-3"),
-            option_sparkline3,
-        );
-        sparkline3.render();
     </script>
     <!--end::Script-->
 </body>

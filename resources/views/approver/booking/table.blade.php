@@ -37,71 +37,164 @@
                 <div class="container-fluid">
                     <div class="card mb-4">
                         <div class="card-header">
-                            <h3 class="card-title">Bordered Table</h3>
+                            <h3 class="card-title">Persetujuan Pemesanan Kendaraan</h3>
                         </div> <!-- /.card-header -->
                         <div class="card-body">
+                            <!-- Notifikasi Status -->
+                            @if(session('success'))
+                                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                                    {{ session('success') }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"
+                                        aria-label="Close"></button>
+                                </div>
+                            @endif
+                            @if(session('error'))
+                                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                    {{ session('error') }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"
+                                        aria-label="Close"></button>
+                                </div>
+                            @endif
+
                             <table class="table table-bordered">
                                 <thead>
                                     <tr>
                                         <th style="width: 10px">#</th>
-                                        <th>Task</th>
-                                        <th>Progress</th>
-                                        <th style="width: 40px">Label</th>
+                                        <th>Kendaraan</th>
+                                        <th>Driver</th>
+                                        <th>Tanggal Pinjam</th>
+                                        <th>Peran Anda</th>
+                                        <th>Status Saat Ini</th>
+                                        <th style="width: 220px; text-align: center;">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr class="align-middle">
-                                        <td>1.</td>
-                                        <td>Update software</td>
-                                        <td>
-                                            <div class="progress progress-xs">
-                                                <div class="progress-bar progress-bar-danger" style="width: 55%"></div>
-                                            </div>
-                                        </td>
-                                        <td><span class="badge text-bg-danger">55%</span></td>
-                                    </tr>
-                                    <tr class="align-middle">
-                                        <td>2.</td>
-                                        <td>Clean database</td>
-                                        <td>
-                                            <div class="progress progress-xs">
-                                                <div class="progress-bar text-bg-warning" style="width: 70%"></div>
-                                            </div>
-                                        </td>
-                                        <td> <span class="badge text-bg-warning">70%</span> </td>
-                                    </tr>
-                                    <tr class="align-middle">
-                                        <td>3.</td>
-                                        <td>Cron job running</td>
-                                        <td>
-                                            <div class="progress progress-xs progress-striped active">
-                                                <div class="progress-bar text-bg-primary" style="width: 30%"></div>
-                                            </div>
-                                        </td>
-                                        <td> <span class="badge text-bg-primary">30%</span> </td>
-                                    </tr>
-                                    <tr class="align-middle">
-                                        <td>4.</td>
-                                        <td>Fix and squish bugs</td>
-                                        <td>
-                                            <div class="progress progress-xs progress-striped active">
-                                                <div class="progress-bar text-bg-success" style="width: 90%"></div>
-                                            </div>
-                                        </td>
-                                        <td> <span class="badge text-bg-success">90%</span> </td>
-                                    </tr>
+                                    @forelse($bookings as $index => $booking)
+                                        @php
+                                            // Cek posisi approver yang sedang login
+                                            $isApprover1 = ($booking->approver_1_id == auth()->id());
+                                            $isApprover2 = ($booking->approver_2_id == auth()->id());
+                                        @endphp
+
+                                        <tr class="align-middle">
+                                            <td>{{ $index + 1 }}.</td>
+                                            <td>
+                                                <strong>{{ $booking->vehicle->name ?? 'N/A' }}</strong>
+                                                <br><small
+                                                    class="text-muted">{{ $booking->vehicle->plate_number ?? '' }}</small>
+                                            </td>
+                                            <td>{{ $booking->driver->name ?? 'N/A' }}</td>
+                                            <td>
+                                                <small>
+                                                    <strong>Mulai:</strong>
+                                                    {{ \Carbon\Carbon::parse($booking->start_date)->format('d M Y') }}<br>
+                                                    <strong>Selesai:</strong>
+                                                    {{ \Carbon\Carbon::parse($booking->end_date)->format('d M Y') }}
+                                                </small>
+                                            </td>
+                                            <td>
+                                                @if($isApprover1)
+                                                    <span class="badge bg-info text-dark">Atasan 1</span>
+                                                @endif
+                                                @if($isApprover2)
+                                                    <span class="badge bg-md bg-secondary">Atasan 2</span>
+                                                @endif
+                                            </td>
+                                            <td>
+                                                @if($booking->status == 'pending')
+                                                    <span class="badge text-bg-warning">Menunggu Atasan 1</span>
+                                                @elseif($booking->status == 'approved_lvl_1')
+                                                    <span class="badge text-bg-primary">Disetujui Atasan 1</span>
+                                                @elseif($booking->status == 'approved_final')
+                                                    <span class="badge text-bg-success">Selesai (Approved)</span>
+                                                @else
+                                                    <span class="badge text-bg-danger">Ditolak</span>
+                                                @endif
+                                            </td>
+                                            <td class="text-center">
+
+                                                {{-- LOGIKA AKSI UNTUK ATASAN 1 --}}
+                                                @if($isApprover1)
+                                                    @if($booking->status == 'pending')
+                                                        <!-- Tombol Setuju / Tolak jika masih pending -->
+                                                        <div class="btn-group" role="group">
+                                                            <form action="{{ route('approver.booking.approve', $booking->id) }}"
+                                                                method="POST" class="d-inline">
+                                                                @csrf
+                                                                <button type="submit" class="btn btn-sm btn-success"><i
+                                                                        class="fas fa-check"></i> Setuju</button>
+                                                            </form>
+                                                            <form action="{{ route('approver.booking.reject', $booking->id) }}"
+                                                                method="POST" class="d-inline">
+                                                                @csrf
+                                                                <button type="submit" class="btn btn-sm btn-danger"
+                                                                    onclick="return confirm('Tolak pesanan ini?')"><i
+                                                                        class="fas fa-times"></i> Tolak</button>
+                                                            </form>
+                                                        </div>
+                                                    @elseif($booking->status == 'approved_lvl_1')
+                                                        <!-- BISA BATAL: Karena Atasan 2 BELUM melakukan approval (status masih approved_lvl_1) -->
+                                                        <form action="{{ route('approver.booking.cancel', $booking->id) }}"
+                                                            method="POST">
+                                                            @csrf
+                                                            <button type="submit" class="btn btn-sm btn-warning"
+                                                                onclick="return confirm('Batalkan persetujuan Anda?')">
+                                                                <i class="fas fa-undo"></i> Batal Setuju
+                                                            </button>
+                                                        </form>
+                                                    @else
+                                                        <!-- TIDAK BISA DIOTAK-ATIK: Jika sudah approved_final atau rejected -->
+                                                        <span class="text-muted"><small>Keputusan Final</small></span>
+                                                    @endif
+                                                @endif
+
+                                                {{-- LOGIKA AKSI UNTUK ATASAN 2 --}}
+                                                @if($isApprover2)
+                                                    @if($booking->status == 'approved_lvl_1')
+                                                        <!-- Tombol Setuju / Tolak baru muncul setelah Atasan 1 menyetujui -->
+                                                        <div class="btn-group" role="group">
+                                                            <form action="{{ route('approver.booking.approve', $booking->id) }}"
+                                                                method="POST" class="d-inline">
+                                                                @csrf
+                                                                <button type="submit" class="btn btn-sm btn-success"><i
+                                                                        class="fas fa-check"></i> Setuju (Final)</button>
+                                                            </form>
+                                                            <form action="{{ route('approver.booking.reject', $booking->id) }}"
+                                                                method="POST" class="d-inline">
+                                                                @csrf
+                                                                <button type="submit" class="btn btn-sm btn-danger"
+                                                                    onclick="return confirm('Tolak pesanan ini?')"><i
+                                                                        class="fas fa-times"></i> Tolak</button>
+                                                            </form>
+                                                        </div>
+                                                    @elseif($booking->status == 'pending')
+                                                        <span class="text-muted"><small>Menunggu Atasan 1</small></span>
+                                                    @elseif($booking->status == 'approved_final')
+                                                        <!-- BISA BATAL: Atasan 2 bisa membatalkan miliknya sendiri karena statusnya baru saja dirubah ke approved_final olehnya (Atasan 1 sudah setuju, tapi Atasan 2 ingin menarik kembali) -->
+                                                        <form action="{{ route('approver.booking.cancel', $booking->id) }}"
+                                                            method="POST">
+                                                            @csrf
+                                                            <button type="submit" class="btn btn-sm btn-warning"
+                                                                onclick="return confirm('Batalkan persetujuan Final Anda?')">
+                                                                <i class="fas fa-undo"></i> Batal Setuju Final
+                                                            </button>
+                                                        </form>
+                                                    @else
+                                                        <span class="text-muted"><small>Ditolak</small></span>
+                                                    @endif
+                                                @endif
+
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="7" class="text-center text-muted">Tidak ada pengajuan pemesanan
+                                                yang membutuhkan persetujuan Anda saat ini.</td>
+                                        </tr>
+                                    @endforelse
                                 </tbody>
                             </table>
                         </div> <!-- /.card-body -->
-                        <div class="card-footer clearfix">
-                            <ul class="pagination pagination-sm m-0 float-end">
-                                <li class="page-item"> <a class="page-link" href="#">&laquo;</a> </li>
-                                <li class="page-item"> <a class="page-link" href="#">1</a> </li>
-                                <li class="page-item"> <a class="page-link" href="#">2</a> </li>
-                                <li class="page-item"> <a class="page-link" href="#">3</a> </li>
-                                <li class="page-item"> <a class="page-link" href="#">&raquo;</a> </li>
-                            </ul>
-                        </div>
                     </div> <!-- /.card -->
                 </div>
                 <!--end::Container-->
