@@ -9,8 +9,9 @@ use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['name', 'email', 'password'])]
+#[Fillable(['name', 'email', 'password', 'role'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -28,5 +29,25 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+    public function bookingCreated(): HasMany
+    {
+        return $this->hasMany(Booking::class, 'admin_id');
+    }
+
+    public function approvalsLevel1(): HasMany
+    {
+        return $this->hasMany(Booking::class, 'approver_1_id');
+    }
+
+    public function approvalsLevel2(): HasMany
+    {
+        return $this->hasMany(Booking::class, 'approver_2_id');
     }
 }
