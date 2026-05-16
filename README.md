@@ -36,25 +36,25 @@ Ikuti langkah-langkah di bawah ini untuk menjalankan aplikasi di komputer lokal 
 2. **Instal Dependensi PHP (Composer)**
    Buka terminal di dalam root folder proyek, lalu jalankan perintah:
 
-    ```bash
-    composer install
-    ```
+```bash
+composer install
+```
 
 3. **Konfigurasi File .env**
 
 ```
-   APP_NAME=Laravel
-   APP_ENV=local
-   APP_KEY=base64:am7NNN1kG1Or/YYX9U0Nx6x/b8WKGPX+LcZUzFNWNJg=
-   APP_DEBUG=true
-   APP_URL=http://localhost
+APP_NAME=Laravel
+APP_ENV=local
+APP_KEY=base64:am7NNN1kG1Or/YYX9U0Nx6x/b8WKGPX+LcZUzFNWNJg=
+APP_DEBUG=true
+APP_URL=http://localhost
 
-    DB*CONNECTION=mysql
-    DB_HOST=127.0.0.1
-    DB_PORT=3306
-    DB_DATABASE=technicaltest
-    DB_USERNAME=root
-    DB_PASSWORD=
+DB*CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=technicaltest
+DB_USERNAME=root
+DB_PASSWORD=
 ```
 
 \_Catatan: Buat database kosong bernama `technicaltest` di phpMyAdmin sebelum lanjut ke langkah berikutnya.\*
@@ -62,16 +62,14 @@ Ikuti langkah-langkah di bawah ini untuk menjalankan aplikasi di komputer lokal 
 4. **Migrasi Struktur & Data Awa (Seeder)**
    Jalankan perintah ini untuk membuat seluruh tabel sistem beserta akun default di atas secara otomatis:
 
-    ```bash
+```bash
     php artisan migrate --seed
-
-    ```
+```
 
 5. **Jalankan Aplikasi**
 
 ```bash
     php artisan serve
-
 ```
 
 Akses aplikasi melalui browser di alamat: **`http://localhost:8000`**
